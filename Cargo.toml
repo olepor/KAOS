@@ -1,0 +1,6 @@
+[package]
+name = "kaos"
+version = "0.1.0"
+authors = ["Ole Petter <olepor@matnat.uio.no>"]
+
+[dependencies]
