@@ -1,0 +1,9 @@
+
+
+variable = let <identifier> = <expression>
+
+expression = character(character)*
+
+character = (A-Z)
+          | (a-z)
+

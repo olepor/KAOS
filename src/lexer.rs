@@ -1,52 +1,7 @@
 use std::str::Chars;
 use std::collections::HashMap;
 use std;
-
-#[derive(Debug, PartialEq, Clone)]
-pub enum Token{
-    // Specials
-    ILLEGAL,
-    EOF,
-
-    // Identifiers.
-    IDENT(String), // ADD, FOOBAR, X, Y ...
-    INT(i32), // 12345 ...
-
-    /////////////
-    // Operators
-    /////////////
-
-    // Binary
-    ASSIGN,
-    PLUS,
-    MINUS,
-    ASTERISK,
-    SLASH,
-    BANG,
-    LT,
-    LTEQ,
-    GT,
-    EQ,
-    NOTEQ,
-
-    // Delimeters
-    COMMA,
-    SEMICOLON,
-
-    LPAREN,
-    RPAREN,
-    LBRACE,
-    RBRACE,
-
-    // Keywords
-    FUNCTION,
-    IF,
-    ELSE,
-    RETURN,
-    TRUE,
-    FALSE,
-
-}
+use token::Token;
 
 lazy_static! {
     static ref HASHMAP: HashMap<&'static str, Token> = {
@@ -64,14 +19,31 @@ lazy_static! {
 #[derive(Debug)]
 pub struct Lexer<'a> {
     input: std::iter::Peekable<Chars<'a>>,
+    cur_token: Token,
+    peek_token: Token,
 }
 
 impl <'a> Lexer <'a> {
     pub fn new(input: &'a str) -> Lexer<'a> {
-        Lexer{input: input.chars().peekable()}
+        let mut l = Lexer{input: input.chars().peekable(), cur_token: Token::ILLEGAL, peek_token: Token::ILLEGAL};
+        l.next();
+        l.next();
+        l
     }
 
     pub fn next(& mut self) -> Token {
+        let r_tok = self.cur_token.clone();
+        self.cur_token = self.peek_token.clone();
+        self.peek_token = self.get_next_token();
+        return r_tok;
+    }
+
+    pub fn peek(& self) -> Token {
+        return self.peek_token.clone();
+    }
+
+
+    fn get_next_token(& mut self) -> Token {
         let c = match self.input.next() {
             Some(c) => c,
             None => return Token::EOF,
@@ -130,7 +102,7 @@ impl <'a> Lexer <'a> {
                     return self.parse_number(String::from(c.to_string()));
                 } else if c.is_whitespace() {
                     // Consume whitespace
-                    return self.next();
+                    return self.get_next_token();
                 } else {
                     // Keyword
                     assert!(c.is_alphabetic());
@@ -208,5 +180,16 @@ mod tests {
         assert_eq!(lexer.next(), Token::IDENT("abc".to_string()));
         assert_eq!(lexer.next(), Token::IDENT("cde".to_string()));
         assert_eq!(lexer.next(), Token::EOF);
+    }
+
+    #[test]
+    fn test_peek() {
+        let mut lexer = Lexer::new("=+-*/!");
+        let expects = vec![Token::PLUS, Token::MINUS,
+                           Token::ASTERISK, Token::SLASH, Token::BANG];
+        for expect in expects.iter() {
+            assert_eq!(lexer.peek(), *expect);
+            lexer.next();
+        }
     }
 }
