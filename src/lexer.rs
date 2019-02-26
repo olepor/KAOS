@@ -12,6 +12,7 @@ lazy_static! {
         m.insert("return", Token::RETURN);
         m.insert("true", Token::TRUE);
         m.insert("false", Token::FALSE);
+        m.insert("let", Token::LET);
         m
     };
 }

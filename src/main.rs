@@ -24,15 +24,10 @@ fn main() {
         let lexer = lexer::Lexer::new(& input);
 
 
-        let parser = parser::Parser::new(lexer);
+        let mut parser = parser::Parser::new(lexer);
 
         let program = parser.parse();
-        // let mut tok = lexer.next();
-        // println!("{:?}", tok);
-        // while tok != Token::EOF {
-        //     tok = lexer.next();
-        //     println!("{:?}", tok);
-        // }
-        // input.clear();
+
+        println!("{:?}", program);
     }
 }

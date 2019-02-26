@@ -7,6 +7,7 @@ pub enum Token{
     // Identifiers.
     IDENT(String), // ADD, FOOBAR, X, Y ...
     INT(i32), // 12345 ...
+    LET,
 
     /////////////
     // Operators

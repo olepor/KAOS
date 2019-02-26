@@ -10,3 +10,5 @@ The grammar for KAOS will start out real simple, and then progress to encompass,
 and after a while become more Bash like - cause we all love Bash' syntax don't
 we?
 
+Can be found in the [file](./src/grammar.ebnf)
+
