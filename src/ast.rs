@@ -1,7 +1,8 @@
 use token::Token;
 
+#[derive(Debug, PartialEq)]
 pub struct Program {
-    pub statements: Vec<Statement>,
+    pub statements: Vec<Variable>,
 }
 
 #[derive(Debug, PartialEq)]

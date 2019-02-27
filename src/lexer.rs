@@ -107,6 +107,7 @@ impl <'a> Lexer <'a> {
                 } else {
                     // Keyword
                     assert!(c.is_alphabetic());
+                    // TODO - rename this to something sensible!
                     return self.parse_keyword(String::from(c.to_string()));
                 }
             },
@@ -129,11 +130,12 @@ impl <'a> Lexer <'a> {
     fn parse_keyword(& mut self, mut s: String) -> Token {
         let mut c : char;
         loop {
-            c = self.input.next().unwrap_or(' ');
+            c = *self.input.peek().unwrap_or(&' ');
             if c.is_whitespace() || !c.is_alphabetic() {
                 break;
             }
             s.push_str(&c.to_string());
+            self.input.next();
         }
         let tok = HASHMAP.get(s.as_str());
         match tok {
@@ -180,6 +182,14 @@ mod tests {
         assert_eq!(lexer.next(), Token::IDENT("a".to_string()));
         assert_eq!(lexer.next(), Token::IDENT("abc".to_string()));
         assert_eq!(lexer.next(), Token::IDENT("cde".to_string()));
+        assert_eq!(lexer.next(), Token::EOF);
+
+
+        let mut lexer = Lexer::new("let a=b");
+        assert_eq!(lexer.next(), Token::LET);
+        assert_eq!(lexer.next(), Token::IDENT("a".to_string()));
+        assert_eq!(lexer.next(), Token::ASSIGN);
+        assert_eq!(lexer.next(), Token::IDENT("b".to_string()));
         assert_eq!(lexer.next(), Token::EOF);
     }
 

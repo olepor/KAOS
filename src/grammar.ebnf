@@ -1,4 +1,5 @@
 
+program = variable(;variable)*
 
 variable = let <identifier> = <expression>
 
