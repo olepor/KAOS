@@ -4,6 +4,7 @@ program = variable(;variable)*
 variable = let <identifier> = <expression>
 
 expression = character(character)*
+           | num(num)*
 
 character = (A-Z)
           | (a-z)

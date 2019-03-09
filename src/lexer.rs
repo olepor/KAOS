@@ -191,6 +191,19 @@ mod tests {
         assert_eq!(lexer.next(), Token::ASSIGN);
         assert_eq!(lexer.next(), Token::IDENT("b".to_string()));
         assert_eq!(lexer.next(), Token::EOF);
+
+
+        let mut lexer = Lexer::new("let a=b; let a = b");
+        assert_eq!(lexer.next(), Token::LET);
+        assert_eq!(lexer.next(), Token::IDENT("a".to_string()));
+        assert_eq!(lexer.next(), Token::ASSIGN);
+        assert_eq!(lexer.next(), Token::IDENT("b".to_string()));
+        assert_eq!(lexer.next(), Token::SEMICOLON);
+        assert_eq!(lexer.next(), Token::LET);
+        assert_eq!(lexer.next(), Token::IDENT("a".to_string()));
+        assert_eq!(lexer.next(), Token::ASSIGN);
+        assert_eq!(lexer.next(), Token::IDENT("b".to_string()));
+        assert_eq!(lexer.next(), Token::EOF);
     }
 
     #[test]

@@ -28,6 +28,6 @@ fn main() {
 
         let program = parser.parse();
 
-        println!("{:?}", program);
+        // println!("{:?}", program);
     }
 }

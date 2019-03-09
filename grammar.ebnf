@@ -1,0 +1,24 @@
+program = [ variable ]
+          { "function" ident "{" statement "}" }
+          "main "{" statement "}"
+
+program = { statement }
+
+statement = [ variable
+            | call ident
+            | "if" condition "{" statement "}"
+            | "loop" condition "{" statement "}" ]
+
+variable = "let" identifier = expression
+
+identifier = character { character | digit }
+
+expression = [ "+" | "-" ] term { ( "+" | "-") term }
+
+condition = ( "true" | "false" )
+
+number = digit { digit }
+
+character = (A-Z)
+          | (a-z)
+

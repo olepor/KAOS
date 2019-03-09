@@ -44,3 +44,13 @@ pub enum Token{
     FALSE,
 
 }
+
+impl Token {
+    pub fn expect_token(self, expected_token: Token, msg: &str) -> Token {
+        match self {
+            expected_token => expected_token,
+            _ => Token::ILLEGAL,
+        }
+    }
+
+}

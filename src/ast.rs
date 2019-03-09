@@ -1,21 +1,31 @@
 use token::Token;
 
-#[derive(Debug, PartialEq)]
 pub struct Program {
-    pub statements: Vec<Variable>,
+    pub statements: Vec<Box<Statement>>,
 }
 
-#[derive(Debug, PartialEq)]
+pub trait Statement {
+    fn statement_node(& self);
+}
+
+pub trait Expression {
+    fn expression_node(& self);
+}
+
 pub struct  Variable {
     pub identifier: Token,
-    pub value: Expression,
+    pub value: Box<Expression>,
 }
 
-pub struct  Statement {
-    
+impl Statement for Variable {
+    fn statement_node(&self) {}
 }
 
 #[derive(Debug, PartialEq)]
-pub struct  Expression {
+pub struct  Number {
     pub identifier: Token,
+}
+
+impl Expression for Number {
+    fn expression_node(& self) {}
 }
