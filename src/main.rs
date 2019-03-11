@@ -20,14 +20,27 @@ fn main() {
         println!("Please input an expression: ");
         io::stdin().read_line(&mut input).expect("No input!");
 
-        // {
+
+        // TODO - migrate to this interface?
+        // let prog: ast::Program = match input.parse() {
+        //     Ok(p) => p,
+        //     Err(e) => e,
+        // };
+
+        {
         let lexer = lexer::Lexer::new(& input);
 
 
         let mut parser = parser::Parser::new(lexer);
 
-        let program = parser.parse();
+        let program = match parser.parse() {
+            Ok(prog) => prog,
+            Err(e) => panic!("{}",e),
+        };
 
-        // println!("{:?}", program);
+        println!("{}", program);
+        }
+
+        input.clear();
     }
 }

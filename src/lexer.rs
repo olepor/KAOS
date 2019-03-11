@@ -26,14 +26,13 @@ pub struct Lexer<'a> {
 
 impl <'a> Lexer <'a> {
     pub fn new(input: &'a str) -> Lexer<'a> {
-        let mut l = Lexer{input: input.chars().peekable(), cur_token: Token::ILLEGAL, peek_token: Token::ILLEGAL};
-        l.next();
-        l.next();
+        let mut l = Lexer{input: input.chars().peekable(), cur_token: Token::UNINITIALIZED, peek_token: Token::UNINITIALIZED};
+        l.next(); // Set the peek token to the first token in the input stream.
         l
     }
 
     pub fn next(& mut self) -> Token {
-        let r_tok = self.cur_token.clone();
+        let r_tok = self.peek_token.clone();
         self.cur_token = self.peek_token.clone();
         self.peek_token = self.get_next_token();
         return r_tok;
@@ -209,7 +208,7 @@ mod tests {
     #[test]
     fn test_peek() {
         let mut lexer = Lexer::new("=+-*/!");
-        let expects = vec![Token::PLUS, Token::MINUS,
+        let expects = vec![Token::ASSIGN, Token::PLUS, Token::MINUS,
                            Token::ASTERISK, Token::SLASH, Token::BANG];
         for expect in expects.iter() {
             assert_eq!(lexer.peek(), *expect);

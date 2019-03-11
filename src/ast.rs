@@ -1,14 +1,27 @@
 use token::Token;
+use std::fmt;
 
 pub struct Program {
     pub statements: Vec<Box<Statement>>,
 }
 
-pub trait Statement {
+impl fmt::Display for Program {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let mut s = String::new();
+        println!("Printing statements in program:");
+        for statement in &self.statements {
+            println!("statement: {}", statement);
+            // s.push_str(&statement.to_string());
+        }
+        write!(f, "{}", s)
+    }
+}
+
+pub trait Statement : fmt::Display {
     fn statement_node(& self);
 }
 
-pub trait Expression {
+pub trait Expression : fmt::Display {
     fn expression_node(& self);
 }
 
@@ -21,6 +34,12 @@ impl Statement for Variable {
     fn statement_node(&self) {}
 }
 
+impl std::fmt::Display for Variable {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "({}, {})", self.identifier, self.value)
+    }
+}
+
 #[derive(Debug, PartialEq)]
 pub struct  Number {
     pub identifier: Token,
@@ -28,4 +47,31 @@ pub struct  Number {
 
 impl Expression for Number {
     fn expression_node(& self) {}
+}
+
+impl fmt::Display for Number {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
+
+pub struct IFStatement {
+    pub identifier: Token,
+    pub value: Condition, // The condition value.
+    pub body_statements: Vec<Box<Statement>>,
+}
+
+impl fmt::Display for IFStatement {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}: {:?}", self.identifier, self.value)
+    }
+}
+
+impl Statement for IFStatement {
+    fn statement_node(& self) {}
+}
+
+#[derive(Debug)]
+pub struct Condition {
+    pub identifier: Token,
 }
