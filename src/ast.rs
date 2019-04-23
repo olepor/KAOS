@@ -1,8 +1,16 @@
 use token::Token;
 use std::fmt;
 
+#[derive(Debug)]
+pub enum Node {
+    Program(Box<Program>),
+    Statement(Box<Statement>),
+    Expression(Box<Expression>),
+}
+
+#[derive(Debug)]
 pub struct Program {
-    pub statements: Vec<Box<Statement>>,
+    pub statements: Vec<Statement>,
 }
 
 impl fmt::Display for Program {
@@ -17,6 +25,7 @@ impl fmt::Display for Program {
     }
 }
 
+#[derive(Debug)]
 pub enum Statement {
     Let(Box<Statement>),
     Return(Box<Statement>),
