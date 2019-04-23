@@ -17,97 +17,52 @@ impl fmt::Display for Program {
     }
 }
 
-pub trait Statement : fmt::Display {
-    fn statement_node(& self);
+pub enum Statement {
+    Let(Box<Statement>),
+    Return(Box<Statement>),
+    Expression(Box<Statement>),
 }
 
-pub trait Expression : fmt::Display {
-    fn expression_node(& self);
-}
-
-pub struct  Variable {
-    pub identifier: Token,
-    pub value: Box<Expression>,
-}
-
-impl Statement for Variable {
-    fn statement_node(&self) {}
-}
-
-impl std::fmt::Display for Variable {
+impl fmt::Display for Statement {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "({}, {})", self.identifier, self.value)
+        let s = match self {
+            Statement::Let(stmt) => format!("{}", stmt),
+            Statement::Return(ret) => format!("{}", ret),
+            Statement::Expression(exp) => format!("{}", exp),
+        };
+        write!(f, "{}", s)
     }
 }
 
-#[derive(Debug, PartialEq)]
-pub struct  Number {
-    pub identifier: Token,
+#[derive(Debug, PartialEq, Eq, Hash, Clone)]
+pub enum Expression {
+    Identifier(String),
+    // Integer(i64),
+    // Prefix(Box<PrefixExpression>),
+    // Infix(Box<InfixExpression>),
+    // Boolean(bool),
+    // String(String),
+    // If(Box<IfExpression>),
+    // Function(Box<FunctionLiteral>),
 }
 
-impl Expression for Number {
-    fn expression_node(& self) {}
-}
-
-impl fmt::Display for Number {
+impl fmt::Display for Expression {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:?}", self)
-    }
-}
-
-pub struct IFStatement {
-    pub identifier: Token,
-    pub value: Condition, // The condition value.
-    pub body_statements: Vec<Box<Statement>>,
-}
-
-impl fmt::Display for IFStatement {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}: {:?}", self.identifier, self.value)
-    }
-}
-
-impl Statement for IFStatement {
-    fn statement_node(& self) {}
-}
-
-#[derive(Debug)]
-pub struct Condition {
-    pub identifier: Token,
-}
-
-pub struct ExpressionStatement {
-    pub identifier: Token,
-    pub expression: Vec<Box<Expression>>,
-}
-
-impl Statement for ExpressionStatement {
-    fn statement_node(& self) {}
-}
-
-impl fmt::Display for ExpressionStatement {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}: {:?}", self.identifier, self.expression)
-    }
-}
-
-#[derive(Debug)]
-pub struct Identifier {
-    pub identifier: Token,
-}
-
-impl Statement for Identifier {
-    fn statement_node(& self) {}
-}
-
-impl fmt::Display for Identifier {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}: {:?}", self.identifier, {
-            match self.identifier {
-                Token::IDENT(val) => val,
-                _ => panic!("Unexpected token"),
-            }
-        })
+        let s = match self {
+            Expression::Identifier(s) => s.clone(),
+            // Expression::Integer(value) => format!("{}", value),
+            // Expression::Prefix(pref) => pref.to_string(),
+            // Expression::Infix(infix) => infix.to_string(),
+            // Expression::Boolean(b) => b.to_string(),
+            // Expression::String(s) => s.clone(),
+            // Expression::If(exp) => exp.to_string(),
+            // Expression::Function(f) => f.to_string(),
+            // Expression::Call(c) => c.to_string(),
+            // Expression::Array(a) => a.to_string(),
+            // Expression::Index(i) => i.to_string(),
+            // Expression::Hash(h) => h.to_string(),
+        };
+        write!(f, "{}", s)
     }
 }
 

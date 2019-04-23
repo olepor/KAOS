@@ -3,6 +3,7 @@ use lexer::Lexer;
 use std::error::Error;
 use std::fmt;
 use token::Token;
+use std::result;
 
 pub enum Precedence {
     LOWEST,
@@ -37,18 +38,21 @@ impl Error for ParseError {
     }
 }
 
-
-type PrefixParseFn = fn(parser: &mut Parser) -> std::result::Result<Box<Statement>, ParseError>;
-type InfixParseFn = fn(parser: &mut Parser) -> std::result::Result<Box<Statement>, ParseError>;
+type PrefixParseFn = fn(parser: &mut Parser) -> Result<Box<Statement>, ParseError>;
+type InfixParseFn = fn(parser: &mut Parser) -> Result<Box<Statement>, ParseError>;
 
 pub struct Parser<'a> {
     lexer: Lexer<'a>,
+    cur_token: Token,
+    next_token: Token,
 }
 
 impl<'a> Parser<'a> {
     pub fn new(lexer: Lexer) -> Parser {
         Parser {
             lexer: lexer,
+            cur_token: lexer.next(),
+            next_token: lexer.next(),
         }
     }
 
@@ -59,11 +63,15 @@ impl<'a> Parser<'a> {
         }
     }
 
-    pub fn parse(&mut self) -> std::result::Result<Program, ParseError> {
+    fn infix_fn(&mut self) -> Option<InfixParseFn> {
+        None
+    }
+
+    pub fn parse(&mut self) -> Result<Program, ParseError> {
         return self.parse_program();
     }
 
-    fn parse_program(&mut self) -> std::result::Result<Program, ParseError> {
+    fn parse_program(&mut self) -> Result<Program, ParseError> {
         let mut prog = Program {
             statements: Vec::new(),
         };
@@ -76,11 +84,7 @@ impl<'a> Parser<'a> {
         return Ok(prog);
     }
 
-    fn parse_identifier(parser: &mut Parser) -> std::result::Result<Box<Statement>, ParseError> {
-        return Ok(Box::new(Identifier{identifier: Token::IDENT("a".to_string())}));
-    }
-
-    fn parse_statement(&mut self) -> std::result::Result<Box<Statement>, ParseError> {
+    fn parse_statement(&mut self) -> Result<Box<Statement>, ParseError> {
         let n_tok = self.peek_token();
         println!("parse_statement: peek token: {:?}", n_tok);
         match n_tok {
@@ -96,8 +100,20 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn parse_expression_statement(&mut self) -> std::result::Result<Box<Statement>, ParseError> {
+    fn parse_expression(
+        &mut self,
+        precedence: Precedence,
+    ) -> Result<Box<Expression>, ParseError> {
+        let prefix = self.prefixParseFns.get(&self.next_token());
+        match prefix {
+            None => Err(ParseError::ParseErr),
+            Some(f) => {
+                return Ok(Box::new(f()));
+            }
+        }
+    }
 
+    fn parse_expression_statement(&mut self) -> Result<Box<Statement>, ParseError> {
         stmt.statements = self.parse_expression(Precedence::LOWEST);
 
         self.consume_if(Token::SEMICOLON);
@@ -110,27 +126,13 @@ impl<'a> Parser<'a> {
         return stmt;
     }
 
-    fn parse_expression(
-        &mut self,
-        precedence: Precedence,
-    ) -> std::result::Result<Box<Expression>, ParseError> {
-        let prefix = self.prefixParseFns.get(&self.next_token());
-        match prefix {
-            None => Err(ParseError::ParseErr),
-            Some(f) => {
-                return Ok(Box::new(f()));
-            }
-        }
-
-    }
-
     fn consume_if(&mut self, exp_token: Token) {
         if self.peek_token() == exp_token {
             self.next_token();
         }
     }
 
-    fn parse_if(&mut self) -> std::result::Result<IFStatement, ParseError> {
+    fn parse_if(&mut self) -> Result<IFStatement, ParseError> {
         // Panic if not if statement. Something is wrong in the implementation.
         self.next_token().expect_token(Token::IF, "").unwrap();
 
@@ -156,7 +158,13 @@ impl<'a> Parser<'a> {
         Ok(ifstatement)
     }
 
-    fn parse_condition(&mut self) -> std::result::Result<Condition, ParseError> {
+    fn parse_identifier(parser: &mut Parser) -> Result<Box<Statement>, ParseError> {
+        return Ok(Box::new(Identifier {
+            identifier: Token::IDENT("a".to_string()),
+        }));
+    }
+
+    fn parse_condition(&mut self) -> Result<Condition, ParseError> {
         let cond = self.next_token();
         match cond {
             Token::TRUE | Token::FALSE => Ok(Condition { identifier: cond }),
@@ -167,7 +175,7 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn parse_variable(&mut self) -> std::result::Result<Variable, ParseError> {
+    fn parse_variable(&mut self) -> Result<Variable, ParseError> {
         println!("parse_variable...");
 
         self.next_token()
@@ -195,17 +203,17 @@ impl<'a> Parser<'a> {
         });
     }
 
-    fn parse_number(&mut self) -> std::result::Result<i32, ParseError> {
+    fn parse_number(&mut self) -> Result<i32, ParseError> {
         let a = self.parse_a();
         return Ok(1);
     }
 
-    fn parse_a(&mut self) -> std::result::Result<i32, ParseError> {
+    fn parse_a(&mut self) -> Result<i32, ParseError> {
         let b = self.parse_b();
         return Ok(2);
     }
 
-    fn parse_b(&mut self) -> std::result::Result<i32, ParseError> {
+    fn parse_b(&mut self) -> Result<i32, ParseError> {
         // b = "(" number ")"
         //     | number
         //     | digit
@@ -220,7 +228,6 @@ impl<'a> Parser<'a> {
         return self.lexer.peek();
     }
 }
-
 
 #[cfg(test)]
 mod tests {
