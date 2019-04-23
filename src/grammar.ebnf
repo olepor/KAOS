@@ -9,3 +9,9 @@ expression = character(character)*
 character = (A-Z)
           | (a-z)
 
+
+
+number = factor { [+|-] factor }
+
+factor = number { [*|/] number }
+       | [0-9]

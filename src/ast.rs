@@ -75,3 +75,39 @@ impl Statement for IFStatement {
 pub struct Condition {
     pub identifier: Token,
 }
+
+pub struct ExpressionStatement {
+    pub identifier: Token,
+    pub expression: Vec<Box<Expression>>,
+}
+
+impl Statement for ExpressionStatement {
+    fn statement_node(& self) {}
+}
+
+impl fmt::Display for ExpressionStatement {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}: {:?}", self.identifier, self.expression)
+    }
+}
+
+#[derive(Debug)]
+pub struct Identifier {
+    pub identifier: Token,
+}
+
+impl Statement for Identifier {
+    fn statement_node(& self) {}
+}
+
+impl fmt::Display for Identifier {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}: {:?}", self.identifier, {
+            match self.identifier {
+                Token::IDENT(val) => val,
+                _ => panic!("Unexpected token"),
+            }
+        })
+    }
+}
+

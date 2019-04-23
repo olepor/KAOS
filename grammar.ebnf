@@ -8,17 +8,29 @@ statement = [ variable
             | call ident
             | "if" condition "{" statement "}"
             | "loop" condition "{" statement "}" ]
+            | for i in 1..N do "{" statement "}" // Maybe add this niciety.
 
 variable = "let" identifier = expression
 
 identifier = character { character | digit }
 
-expression = [ "+" | "-" ] term { ( "+" | "-") term }
+expression = factor
+           | condition
+           | 
+
+factor = [ "+" | "-" ] term { ( "+" | "-") term }
 
 condition = ( "true" | "false" )
-
-number = digit { digit }
 
 character = (A-Z)
           | (a-z)
 
+digit = [0-9] { [0-9] }
+
+number = a { [+|-] a }
+
+a = b { [*|/] b }
+
+b = "(" number ")"
+  | number
+  | digit
