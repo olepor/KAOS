@@ -131,9 +131,9 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_let_statement(&mut self) -> Result<Statement, ParseError> {
-        self.cur_token.expect_token(Token::IDENT("a".to_string()));
+        assert!(self.cur_token.is_identifier());
         self.next_token();
-        self.cur_token.expect_token(Token::ASSIGN);
+        self.cur_token.expect_token(Token::ASSIGN)?;
         self.next_token();
         // Consume statement for now.
         self.next_token();
