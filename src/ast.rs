@@ -1,4 +1,3 @@
-use token::Token;
 use std::fmt;
 
 #[derive(Debug)]

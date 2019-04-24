@@ -2,7 +2,7 @@ use ast::*;
 use lexer::Lexer;
 use std::error::Error;
 use std::fmt;
-use std::result;
+use std::result::Result;
 use token::Token;
 
 pub enum Precedence {
@@ -48,11 +48,13 @@ pub struct Parser<'a> {
 }
 
 impl<'a> Parser<'a> {
-    pub fn new(lexer: Lexer) -> Parser {
+    pub fn new(mut lexer: Lexer) -> Parser {
+        let a = lexer.next();
+        let b = lexer.next();
         Parser {
             lexer: lexer,
-            cur_token: lexer.next(),
-            next_token: lexer.next(),
+            cur_token: a,
+            next_token: b,
         }
     }
 
@@ -128,14 +130,14 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn assert_token(& self, expected_token: Token) -> Result<(), ParseError> {
-        match self.cur_token {
-            expected_token => Ok(()),
-            _ => Err(ParseError::UnexpectedToken(self.cur_token)),
-        }
-    }
     fn parse_let_statement(&mut self) -> Result<Statement, ParseError> {
-        self.assert_token(Token::IDENT("a".to_string()));
+        self.cur_token.expect_token(Token::IDENT("a".to_string()));
+        self.next_token();
+        self.cur_token.expect_token(Token::ASSIGN);
+        self.next_token();
+        // Consume statement for now.
+        self.next_token();
+        self.consume_if(Token::SEMICOLON);
         Err(ParseError::UnImplemented)
     }
 
@@ -144,13 +146,13 @@ impl<'a> Parser<'a> {
     // }
 
     fn next_token(&mut self) -> Token {
-        self.cur_token = self.next_token;
+        self.cur_token = self.lexer.next();
         self.next_token = self.lexer.next();
-        self.cur_token
+        self.cur_token.clone()
     }
 
     fn peek_token(&self) -> Token {
-        return self.next_token;
+        return self.next_token.clone();
     }
 }
 
@@ -161,20 +163,11 @@ mod tests {
 
     #[test]
     fn test_parse() {
-        // let lexer = Lexer::new("let a=b");
-        // let mut parser = Parser::new(lexer);
-        // assert_eq!(
-        //     parser.parse(),
-        //     Some(Program {
-        //         statements: vec![Variable {
-        //             identifier: Token::IDENT("a".to_string()),
-        //             value: Box::new(Expression {
-        //                 identifier: Token::IDENT("b".to_string())
-        //             },),
-        //         },],
-        //     })
-        // );
-
+        let lexer = Lexer::new("let a=b");
+        let mut parser = Parser::new(lexer);
+        // Parse and loop through the tokens.
+        let res = parser.parse();
+        assert!(res.is_ok());
         // let lexer = Lexer::new("let a=b; let a = b");
 
         // let mut parser = Parser::new(lexer);

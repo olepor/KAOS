@@ -50,11 +50,11 @@ use parser::ParseError;
 use std::mem;
 
 impl Token {
-    pub fn expect_token(self, expected_token: Token, msg:&'static str) -> std::result::Result<Token, ParseError> {
-        if mem::discriminant(&self) == mem::discriminant(&expected_token) {
-            Ok(self)
+    pub fn expect_token(&self, expected_token: Token) -> std::result::Result<(), ParseError> {
+        if mem::discriminant(self) == mem::discriminant(&expected_token) {
+            Ok(())
         } else {
-            Err(ParseError::UnexpectedToken(self, msg))
+            Err(ParseError::UnexpectedToken(self.clone()))
         }
     }
 
@@ -70,13 +70,12 @@ impl std::fmt::Display for Token {
 
 #[cfg(test)]
 mod tests {
-    
     use super::*;
 
     #[test]
     fn test_expect_token() {
         let tokA = Token::INT(4);
         let tokB = Token::INT(5);
-        tokA.expect_token(tokB, &"some msg");
+        tokA.expect_token(tokB);
     }
 }
