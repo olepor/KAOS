@@ -18,7 +18,7 @@ impl fmt::Display for Program {
         println!("Printing statements in program:");
         for statement in &self.statements {
             println!("statement: {}", statement);
-            // s.push_str(&statement.to_string());
+            s.push_str(&statement.to_string());
         }
         write!(f, "{}", s)
     }
@@ -26,7 +26,7 @@ impl fmt::Display for Program {
 
 #[derive(Debug)]
 pub enum Statement {
-    Let(Box<Statement>),
+    Let(Box<Expression>),
     Return(Box<Statement>),
     Expression(Box<Statement>),
 }
@@ -42,9 +42,11 @@ impl fmt::Display for Statement {
     }
 }
 
+use token::Token;
+
 #[derive(Debug, PartialEq, Eq, Hash, Clone)]
 pub enum Expression {
-    Identifier(String),
+    Identifier(Box<Token>),
     // Integer(i64),
     // Prefix(Box<PrefixExpression>),
     // Infix(Box<InfixExpression>),

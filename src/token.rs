@@ -51,20 +51,6 @@ pub enum Token{
 use parser::ParseError;
 use std::mem;
 
-impl Token {
-    pub fn expect_token_type(&self, expected_token: Discriminant<Token>) -> std::result::Result<(), ParseError> {
-        if mem::discriminant(self) == expected_token {
-            Ok(())
-        } else {
-            Err(ParseError::UnexpectedToken(self.clone()))
-        }
-    }
-
-    pub fn is_identifier(&self) -> bool {
-        mem::discriminant(self) == Token::IDENT(String::from("a"))
-    }
-}
-
 use std::fmt;
 
 impl std::fmt::Display for Token {
@@ -81,6 +67,6 @@ mod tests {
     fn test_expect_token() {
         let tokA = Token::INT(4);
         let tokB = Token::INT(5);
-        tokA.expect_token_type(tokB);
+        // tokA.expect_token_type(Discriminant(tokB));
     }
 }

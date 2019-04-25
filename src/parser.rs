@@ -16,18 +16,17 @@ pub enum Precedence {
 
 #[derive(Debug)]
 pub enum ParseError {
-    ParseErr,
-    UnexpectedToken(Token),
+    UnexpectedToken(Token, String),
     UnImplemented,
 }
 
 impl fmt::Display for ParseError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            ParseError::UnexpectedToken(a) => {
-                write!(f, "Parse error! Unexpected token: {}", a)
+            ParseError::UnexpectedToken(a, msg) => {
+                write!(f, "Parse error! Unexpected token: {}: {}", a, msg)
             }
-            _ => write!(f, "Parse error!"),
+            _ => write!(f, "Parse error (not unexpected token)!"),
         }
     }
 }
@@ -87,9 +86,7 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_statement(&mut self) -> Result<Statement, ParseError> {
-        let n_tok = self.peek_token();
-        println!("parse_statement: peek token: {:?}", n_tok);
-        match n_tok {
+        match self.cur_token {
             Token::LET => {
                 self.parse_let_statement()
             }
@@ -97,7 +94,7 @@ impl<'a> Parser<'a> {
             //     let ifs = self.parse_if()?;
             //     Ok(Box::new(ifs))
             // }
-            _ => Err(ParseError::ParseErr),
+            _ => Err(ParseError::UnexpectedToken(self.cur_token.clone(), String::from("parse_statement: "))),
         }
     }
 
@@ -124,21 +121,18 @@ impl<'a> Parser<'a> {
     //     return stmt;
     // }
 
-    fn consume_if(&mut self, exp_token: Token) {
-        if self.peek_token() == exp_token {
-            self.next_token();
-        }
-    }
-
     fn parse_let_statement(&mut self) -> Result<Statement, ParseError> {
-        assert!(self.cur_token.is_identifier());
-        self.next_token();
-        self.cur_token.expect_token(Token::ASSIGN)?;
-        self.next_token();
-        // Consume statement for now.
-        self.next_token();
-        self.consume_if(Token::SEMICOLON);
-        Err(ParseError::UnImplemented)
+        let ident = match self.peek_token() {
+            Token::IDENT(_) => self.next_token(),
+            _ => Err(ParseError::UnexpectedToken(self.peek_token(), String::from("parse let statement")))?
+        };
+        // Consume until semicolon!
+        loop {
+            if self.cur_token == Token::SEMICOLON {
+                break;
+            }
+        }
+        Ok(Statement::Let(Box::new(Expression::Identifier(Box::new(ident)))))
     }
 
     // fn parse_identifier(parser: &mut Parser) -> Result<Expression, ParseError> {
@@ -167,6 +161,7 @@ mod tests {
         let mut parser = Parser::new(lexer);
         // Parse and loop through the tokens.
         let res = parser.parse();
+        println!("{:?}", res);
         assert!(res.is_ok());
         // let lexer = Lexer::new("let a=b; let a = b");
 
