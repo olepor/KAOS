@@ -42,18 +42,12 @@ type InfixParseFn = fn(parser: &mut Parser) -> Result<Box<Statement>, ParseError
 
 pub struct Parser<'a> {
     lexer: Lexer<'a>,
-    cur_token: Token,
-    next_token: Token,
 }
 
 impl<'a> Parser<'a> {
     pub fn new(mut lexer: Lexer) -> Parser {
-        let a = lexer.next();
-        let b = lexer.next();
         Parser {
             lexer: lexer,
-            cur_token: a,
-            next_token: b,
         }
     }
 
@@ -86,15 +80,16 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_statement(&mut self) -> Result<Statement, ParseError> {
-        match self.cur_token {
+        match self.peek_token() {
             Token::LET => {
+                self.next_token(); // Consume Let
                 self.parse_let_statement()
             }
             // Token::IF => {
             //     let ifs = self.parse_if()?;
             //     Ok(Box::new(ifs))
             // }
-            _ => Err(ParseError::UnexpectedToken(self.cur_token.clone(), String::from("parse_statement: "))),
+            _ => Err(ParseError::UnexpectedToken(self.cur_token(), String::from("parse_statement: "))),
         }
     }
 
@@ -122,15 +117,22 @@ impl<'a> Parser<'a> {
     // }
 
     fn parse_let_statement(&mut self) -> Result<Statement, ParseError> {
-        let ident = match self.peek_token() {
-            Token::IDENT(_) => self.next_token(),
-            _ => Err(ParseError::UnexpectedToken(self.peek_token(), String::from("parse let statement")))?
+        // For a let statement the next token must be an identifier!
+        println!("{}", self.cur_token());
+        println!("{}", self.peek_token());
+        println!("{}", self.peek_token());
+        let ident = self.next_token();
+        println!("{}", ident);
+        match ident {
+            Token::IDENT(_) => {}, // No-Op.
+            _ => Err(ParseError::UnexpectedToken(self.peek_token(), String::from("parse let statement - no identifier found")))?
         };
         // Consume until semicolon!
         loop {
-            if self.cur_token == Token::SEMICOLON {
+            if self.cur_token() == Token::SEMICOLON {
                 break;
             }
+            self.next_token(); // For now - consume all tokens until ';' is encountered.
         }
         Ok(Statement::Let(Box::new(Expression::Identifier(Box::new(ident)))))
     }
@@ -139,14 +141,16 @@ impl<'a> Parser<'a> {
     //     return Ok(Box::new(Expression::Identifier("a".to_string())));
     // }
 
+    fn cur_token(&self) -> Token {
+        self.lexer.cur_token.clone()
+    }
+
     fn next_token(&mut self) -> Token {
-        self.cur_token = self.lexer.next();
-        self.next_token = self.lexer.next();
-        self.cur_token.clone()
+        self.lexer.next()
     }
 
     fn peek_token(&self) -> Token {
-        return self.next_token.clone();
+        return self.lexer.peek()
     }
 }
 
@@ -157,7 +161,7 @@ mod tests {
 
     #[test]
     fn test_parse() {
-        let lexer = Lexer::new("let a=b");
+        let lexer = Lexer::new("let a=b;");
         let mut parser = Parser::new(lexer);
         // Parse and loop through the tokens.
         let res = parser.parse();

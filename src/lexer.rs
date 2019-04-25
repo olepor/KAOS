@@ -20,8 +20,8 @@ lazy_static! {
 #[derive(Debug)]
 pub struct Lexer<'a> {
     input: std::iter::Peekable<Chars<'a>>,
-    cur_token: Token,
-    peek_token: Token,
+    pub cur_token: Token,
+    pub peek_token: Token,
 }
 
 impl <'a> Lexer <'a> {

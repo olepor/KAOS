@@ -21,12 +21,6 @@ fn main() {
         io::stdin().read_line(&mut input).expect("No input!");
 
 
-        // TODO - migrate to this interface?
-        // let prog: ast::Program = match input.parse() {
-        //     Ok(p) => p,
-        //     Err(e) => e,
-        // };
-
         {
         let lexer = lexer::Lexer::new(& input);
 
