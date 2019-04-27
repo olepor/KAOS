@@ -29,6 +29,7 @@ pub enum Statement {
     Let(Box<Expression>),
     Return(Box<Expression>),
     Expression(Box<Statement>),
+    ExpressionStatement(Box<Expression>),
 }
 
 impl fmt::Display for Statement {
@@ -37,6 +38,7 @@ impl fmt::Display for Statement {
             Statement::Let(stmt) => format!("{}", stmt),
             Statement::Return(ret) => format!("{}", ret),
             Statement::Expression(exp) => format!("{}", exp),
+            Statement::ExpressionStatement(exp) => format!("{}", exp),
         };
         write!(f, "{}", s)
     }

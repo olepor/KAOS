@@ -37,9 +37,6 @@ impl Error for ParseError {
     }
 }
 
-type PrefixParseFn = fn(parser: &mut Parser) -> Result<Box<Statement>, ParseError>;
-type InfixParseFn = fn(parser: &mut Parser) -> Result<Box<Statement>, ParseError>;
-
 pub struct Parser<'a> {
     lexer: Lexer<'a>,
 }
@@ -122,11 +119,7 @@ impl<'a> Parser<'a> {
 
     fn parse_let_statement(&mut self) -> Result<Statement, ParseError> {
         // For a let statement the next token must be an identifier!
-        println!("{}", self.cur_token());
-        println!("{}", self.peek_token());
-        println!("{}", self.peek_token());
         let ident = self.next_token();
-        println!("{}", ident);
         match ident { // Maybe this can be made into a partial eq test ?
             Token::IDENT(_) => {}, // No-Op.
             _ => Err(ParseError::UnexpectedToken(self.peek_token(), String::from("parse let statement - no identifier found")))?
@@ -144,7 +137,6 @@ impl<'a> Parser<'a> {
     fn parse_return_statement(&mut self) -> Result<Statement, ParseError> {
 
         let expr = self.next_token();
-        println!("{:?}, parse_return_statement", expr);
         // Skip until semicolon!
         loop {
             if self.cur_token() == Token::SEMICOLON {
@@ -202,25 +194,16 @@ mod tests {
         // let res = parser.parse();
         println!("{:?}", res);
         assert!(res.is_ok());
-        // let mut parser = Parser::new(lexer);
-        // assert_eq!(
-        //     parser.parse(),
-        //     Some(Program {
-        //         statements: vec![
-        //             Variable {
-        //                 identifier: Token::IDENT("a".to_string()),
-        //                 value: Expression {
-        //                     identifier: Token::IDENT("b".to_string()),
-        //                 },
-        //             },
-        //             Variable {
-        //                 identifier: Token::IDENT("a".to_string()),
-        //                 value: Expression {
-        //                     identifier: Token::IDENT("b".to_string()),
-        //                 },
-        //             },
-        //         ],
-        //     })
-        // );
+
+        // TestExpressionStatement
+        let lexer = Lexer::new("foobar;");
+        let mut parser = Parser::new(lexer);
+        println!("{:?}", res);
+        let prog = parser.parse().unwrap();
+
+        assert_eq!(prog.statements.len(), 1);
+
+        // Statement must be an expression statement.
+        assert_eq!(prog.statements[0], Statement::ExpressionStatement(Box::new(Expression::Identifier(Box::new(Token::IDENT(String::from("foobar")))))));
     }
 }
