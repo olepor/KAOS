@@ -85,6 +85,10 @@ impl<'a> Parser<'a> {
                 self.next_token(); // Consume Let
                 self.parse_let_statement()
             }
+            Token::RETURN => {
+                self.next_token(); // Consume Return
+                self.parse_return_statement()
+            }
             // Token::IF => {
             //     let ifs = self.parse_if()?;
             //     Ok(Box::new(ifs))
@@ -123,7 +127,7 @@ impl<'a> Parser<'a> {
         println!("{}", self.peek_token());
         let ident = self.next_token();
         println!("{}", ident);
-        match ident {
+        match ident { // Maybe this can be made into a partial eq test ?
             Token::IDENT(_) => {}, // No-Op.
             _ => Err(ParseError::UnexpectedToken(self.peek_token(), String::from("parse let statement - no identifier found")))?
         };
@@ -136,6 +140,28 @@ impl<'a> Parser<'a> {
         }
         Ok(Statement::Let(Box::new(Expression::Identifier(Box::new(ident)))))
     }
+
+    fn parse_return_statement(&mut self) -> Result<Statement, ParseError> {
+
+        let expr = self.next_token();
+        println!("{:?}, parse_return_statement", expr);
+        // Skip until semicolon!
+        loop {
+            if self.cur_token() == Token::SEMICOLON {
+                break;
+            }
+            self.next_token(); // For now - consume all tokens until ';' is encountered.
+            println!("{:?}, parse_return_statement, loop", self.cur_token());
+            break;
+        }
+        Ok(Statement::Return(Box::new(Expression::Identifier(Box::new(expr)))))
+    }
+
+    // fn parse_if_statement(& mut self) -> Result<Statement, ParseError> {
+        
+    // }
+
+    // fn consume_if<T>(&mut self, T) -> Token
 
     // fn parse_identifier(parser: &mut Parser) -> Result<Expression, ParseError> {
     //     return Ok(Box::new(Expression::Identifier("a".to_string())));
@@ -169,6 +195,13 @@ mod tests {
         assert!(res.is_ok());
         // let lexer = Lexer::new("let a=b; let a = b");
 
+        // Test parse Return statement
+        let lexer = Lexer::new("return 5;");
+        let mut parser = Parser::new(lexer);
+        // // Parse and loop through the tokens.
+        // let res = parser.parse();
+        println!("{:?}", res);
+        assert!(res.is_ok());
         // let mut parser = Parser::new(lexer);
         // assert_eq!(
         //     parser.parse(),

@@ -116,7 +116,7 @@ impl <'a> Lexer <'a> {
     fn parse_number(& mut self, mut s: String) -> Token{
         let mut c : char;
         loop {
-            c = self.input.next().unwrap_or(' ');
+            c = *self.input.peek().unwrap_or(&' ');
             if c.is_whitespace() || !c.is_numeric() {
                 break;
             }
@@ -202,6 +202,12 @@ mod tests {
         assert_eq!(lexer.next(), Token::IDENT("a".to_string()));
         assert_eq!(lexer.next(), Token::ASSIGN);
         assert_eq!(lexer.next(), Token::IDENT("b".to_string()));
+        assert_eq!(lexer.next(), Token::EOF);
+
+        let mut lexer = Lexer::new("return 5;");
+        assert_eq!(lexer.next(), Token::RETURN);
+        assert_eq!(lexer.next(), Token::INT(5));
+        assert_eq!(lexer.next(), Token::SEMICOLON);
         assert_eq!(lexer.next(), Token::EOF);
     }
 

@@ -27,7 +27,7 @@ impl fmt::Display for Program {
 #[derive(Debug)]
 pub enum Statement {
     Let(Box<Expression>),
-    Return(Box<Statement>),
+    Return(Box<Expression>),
     Expression(Box<Statement>),
 }
 
