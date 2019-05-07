@@ -90,32 +90,38 @@ impl<'a> Parser<'a> {
             //     let ifs = self.parse_if()?;
             //     Ok(Box::new(ifs))
             // }
-            _ => Err(ParseError::UnexpectedToken(self.cur_token(), String::from("parse_statement: "))),
+            _ => self.parse_expression_statement(),
         }
     }
 
-    // fn parse_expression(&mut self, precedence: Precedence) -> Result<Expression, ParseError> {
-    //     let prefix = self.prefixParseFns.get(&self.next_token());
-    //     match prefix {
-    //         None => Err(ParseError::ParseErr),
-    //         Some(f) => {
-    //             return Ok(Box::new(f()));
-    //         }
-    //     }
-    // }
+    fn parse_identifier(&mut self) -> Result<Token, ParseError> {
+        Err(ParseError::UnImplemented)
+    }
 
-    // fn parse_expression_statement(&mut self) -> Result<Statement, ParseError> {
-    //     stmt.statements = self.parse_expression(Precedence::LOWEST);
+    fn parse_prefix(&mut self, token: Token) -> Result<Token, ParseError> {
+        match token {
+            Token::IDENT(_) => self.parse_identifier(),
+            _ => Err(ParseError::UnImplemented),
+        }
+    }
 
-    //     self.consume_if(Token::SEMICOLON);
+    fn parse_expression(&mut self, precedence: Precedence) -> Result<Expression, ParseError> {
+        let prefix = self.parse_prefix(self.cur_token())?;
 
-    //     let stmt = ExpressionStatement {
-    //         identifier: self.next_token(),
-    //         expression: stmt,
-    //     };
+        let leftExp = prefix();
 
-    //     return stmt;
-    // }
+        return leftExp;
+    }
+
+    fn parse_expression_statement(&mut self) -> Result<Statement, ParseError> {
+        let expr = self.parse_expression(Precedence::LOWEST);
+
+        if self.peek_token() == Token::SEMICOLON {
+            self.next_token();
+        }
+
+        return Err(ParseError::UnImplemented);
+    }
 
     fn parse_let_statement(&mut self) -> Result<Statement, ParseError> {
         // For a let statement the next token must be an identifier!
@@ -187,23 +193,30 @@ mod tests {
         assert!(res.is_ok());
         // let lexer = Lexer::new("let a=b; let a = b");
 
+    }
+
+    fn test_parse_return_statement() {
         // Test parse Return statement
         let lexer = Lexer::new("return 5;");
         let mut parser = Parser::new(lexer);
         // // Parse and loop through the tokens.
-        // let res = parser.parse();
+        let res = parser.parse();
         println!("{:?}", res);
         assert!(res.is_ok());
+    }
 
+    fn test_parse_expression_statement() {
         // TestExpressionStatement
         let lexer = Lexer::new("foobar;");
         let mut parser = Parser::new(lexer);
-        println!("{:?}", res);
+        let res = parser.parse();
+        println!("{:?}, result", res);
         let prog = parser.parse().unwrap();
 
         assert_eq!(prog.statements.len(), 1);
 
         // Statement must be an expression statement.
-        assert_eq!(prog.statements[0], Statement::ExpressionStatement(Box::new(Expression::Identifier(Box::new(Token::IDENT(String::from("foobar")))))));
+        assert_eq!(prog.statements[0],
+                   Statement::ExpressionStatement(Box::new(Expression::Identifier(Box::new(Token::IDENT(String::from("foobar")))))));
     }
 }

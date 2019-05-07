@@ -24,7 +24,7 @@ impl fmt::Display for Program {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Statement {
     Let(Box<Expression>),
     Return(Box<Expression>),
