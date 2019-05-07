@@ -106,11 +106,10 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_expression(&mut self, precedence: Precedence) -> Result<Expression, ParseError> {
-        let prefix = self.parse_prefix(self.cur_token())?;
+        let cur_tok = self.cur_token();
+        let prefix = self.parse_prefix(cur_tok)?;
 
-        let leftExp = prefix();
-
-        return leftExp;
+        return Ok(Expression::Identifier(Box::new(prefix)));
     }
 
     fn parse_expression_statement(&mut self) -> Result<Statement, ParseError> {
