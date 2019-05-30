@@ -1,7 +1,13 @@
 use std::fmt;
 
+pub struct Node {
+    pub ntype: NodeType,
+    pub children: Vec<Node>,
+}
+
+
 #[derive(Debug)]
-pub enum Node {
+pub enum NodeType {
     Program(Box<Program>),
     Statement(Box<Statement>),
     Expression(Box<Expression>),
@@ -28,7 +34,6 @@ impl fmt::Display for Program {
 pub enum Statement {
     Let(Box<Expression>),
     Return(Box<Expression>),
-    Expression(Box<Statement>),
     ExpressionStatement(Box<Expression>),
 }
 
@@ -37,7 +42,6 @@ impl fmt::Display for Statement {
         let s = match self {
             Statement::Let(stmt) => format!("{}", stmt),
             Statement::Return(ret) => format!("{}", ret),
-            Statement::Expression(exp) => format!("{}", exp),
             Statement::ExpressionStatement(exp) => format!("{}", exp),
         };
         write!(f, "{}", s)
@@ -48,8 +52,9 @@ use token::Token;
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone)]
 pub enum Expression {
-    Identifier(Box<Token>),
-    // Integer(i64),
+    Identifier(String),
+    IntegerLiteral(i32),
+    EMPTY,
     // Prefix(Box<PrefixExpression>),
     // Infix(Box<InfixExpression>),
     // Boolean(bool),
@@ -60,9 +65,10 @@ pub enum Expression {
 
 impl fmt::Display for Expression {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let s = match self {
-            Expression::Identifier(s) => s.clone(),
-            // Expression::Integer(value) => format!("{}", value),
+        match self {
+            Expression::Identifier(s) => write!(f, "{}", s),
+            Expression::IntegerLiteral(i) => write!(f, "{}", i),
+            Expression::EMPTY => write!(f, "Empty expression"),
             // Expression::Prefix(pref) => pref.to_string(),
             // Expression::Infix(infix) => infix.to_string(),
             // Expression::Boolean(b) => b.to_string(),
@@ -73,8 +79,6 @@ impl fmt::Display for Expression {
             // Expression::Array(a) => a.to_string(),
             // Expression::Index(i) => i.to_string(),
             // Expression::Hash(h) => h.to_string(),
-        };
-        write!(f, "{}", s)
+        }
     }
 }
-
