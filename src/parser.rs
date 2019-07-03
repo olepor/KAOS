@@ -4,8 +4,9 @@ use std::error::Error;
 use std::fmt;
 use std::result::Result;
 use token::Token;
-
+use log::*;
 // Current progress: Pratt-parsing of identifiers.
+// Not done: Parsing of expressions for return statements.
 // Next topic: Integer literals.
 
 pub enum Precedence {
@@ -46,9 +47,7 @@ pub struct Parser<'a> {
 
 impl<'a> Parser<'a> {
     pub fn new(mut lexer: Lexer) -> Parser {
-        Parser {
-            lexer: lexer,
-        }
+        Parser { lexer: lexer }
     }
 
     // fn prefix_fn(&mut self) -> Option<PrefixParseFn> {
@@ -67,10 +66,12 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_program(&mut self) -> Result<ast::Program, ParseError> {
+        debug!("[parser::parse_program] Starting the parser...");
         let mut prog = ast::Program {
             statements: Vec::new(),
         };
         loop {
+            debug!("[parser::parse_program] *Nom, nom, nom* Parsing the next statement...");
             let statement = self.parse_statement()?;
             println!("Pushing statement: {}", statement);
             prog.statements.push(statement);
@@ -99,31 +100,32 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_prefix(&mut self, token: Token) -> Result<ast::Expression, ParseError> {
+        debug!("[parser::parse_prefix] token: {:?}", token);
         match token {
             Token::IDENT(i) => Ok(ast::Expression::Identifier(i)),
-            // Token::INT(i) => {
-            //     let stm = self.parse_integer_literal();
-            //     return Ok(Node::Statement(Box::new(stm)));
-            // },
+            Token::INT(i) => Ok(ast::Expression::IntegerLiteral(i)),
             _ => Err(ParseError::UnImplemented),
         }
     }
 
     fn parse_expression(&mut self, precedence: Precedence) -> Result<ast::Statement, ParseError> {
-        let cur_tok = self.cur_token();
+        debug!("[parser::parse_expression]");
+        let cur_tok = self.next_token();
+        debug!("[parser::parse_expression] current_token: {:?}", cur_tok);
         let prefix = self.parse_prefix(cur_tok)?;
 
         return Ok(ast::Statement::ExpressionStatement(Box::new(prefix)));
     }
 
     fn parse_expression_statement(&mut self) -> Result<ast::Statement, ParseError> {
-        let expr = self.parse_expression(Precedence::LOWEST);
+        debug!("[parser::parse_expression_statement]");
+        let expr = self.parse_expression(Precedence::LOWEST)?;
 
         if self.peek_token() == Token::SEMICOLON {
-            self.next_token();
+            self.next_token(); // Consume
         }
 
-        return Err(ParseError::UnImplemented);
+        return Ok(expr);
     }
 
     // fn parse_integer_literal(&mut self) -> Result<Statement, ParseError> {
@@ -139,9 +141,16 @@ impl<'a> Parser<'a> {
     fn parse_let_statement(&mut self) -> Result<ast::Statement, ParseError> {
         // For a let statement the next token must be an identifier!
         let ident = self.next_token();
-        match ident { // Maybe this can be made into a partial eq test, or a macro ?
-            Token::IDENT(_) => {}, // No-Op.
-            _ => Err(ParseError::UnexpectedToken(self.peek_token(), String::from("parse let statement - no identifier found")))?
+        let ident_ast_node = match ident {
+            // Maybe this can be made into a partial eq test, or a macro ?
+            Token::IDENT(i) => {
+                debug!("[parser::parse_let_statement] parsing identifier {:?}", i);
+                ast::Expression::Identifier(i)
+            }
+            _ => Err(ParseError::UnexpectedToken(
+                self.peek_token(),
+                String::from("parse let statement - no identifier found"),
+            ))?,
         };
         // Consume until semicolon!
         // TODO - ie, no expressions are parsed yet!
@@ -151,7 +160,7 @@ impl<'a> Parser<'a> {
             }
             self.next_token(); // For now - consume all tokens until ';' is encountered.
         }
-        Ok(ast::Statement::Let(Box::new(ast::Expression::EMPTY)))
+        Ok(ast::Statement::Let(Box::new(ident_ast_node)))
     }
 
     fn parse_return_statement(&mut self) -> Result<ast::Statement, ParseError> {
@@ -166,13 +175,11 @@ impl<'a> Parser<'a> {
             break;
         }
         // TODO - eventually the ast-tree will parse expressions, and this will become more complicated.
-        Ok(
-            ast::Statement::Return(
-            Box::new(ast::Expression::EMPTY)))
+        Ok(ast::Statement::Return(Box::new(ast::Expression::EMPTY)))
     }
 
     // fn parse_if_statement(& mut self) -> Result<Statement, ParseError> {
-        
+
     // }
 
     // fn consume_if<T>(&mut self, T) -> Token
@@ -186,11 +193,12 @@ impl<'a> Parser<'a> {
     }
 
     fn next_token(&mut self) -> Token {
+        debug!("[parser::next_token] Next token! coming up");
         self.lexer.next()
     }
 
     fn peek_token(&self) -> Token {
-        return self.lexer.peek()
+        return self.lexer.peek();
     }
 }
 
@@ -211,11 +219,19 @@ mod tests {
         // The ast::Program is the root-node of the AST,
         // and thus the result should be something like:
         assert!(ast.statements.len() == 1);
+        // Verify the AST structure
+        assert_eq!(
+            ast.statements[0],
+            ast::Statement::Let(
+                Box::new(
+                    ast::Expression::Identifier(
+                        String::from("a"))))
+        );
 
         // let lexer = Lexer::new("let a=b; let a = b");
-
     }
 
+    #[test]
     fn test_parse_return_statement() {
         // Test parse Return statement
         let lexer = Lexer::new("return 5;");
@@ -228,9 +244,29 @@ mod tests {
         // parsing is not finished yet.
     }
 
+    #[test]
     fn test_parse_expression_statement() {
+        let _ = simple_logger::init();
         // TestExpressionStatement
         let lexer = Lexer::new("foobar;");
+        let mut parser = Parser::new(lexer);
+        let res = parser.parse();
+        println!("{:?}, result", res);
+        let prog = res.unwrap();
+
+        assert_eq!(prog.statements.len(), 1);
+
+        // Statement must be an expression statement.
+        assert_eq!(
+            prog.statements[0],
+            ast::Statement::ExpressionStatement(Box::new(ast::Expression::Identifier(
+                String::from("foobar")
+            )))
+        );
+    }
+
+    fn test_integer_literal_expression() {
+        let lexer = Lexer::new("5;");
         let mut parser = Parser::new(lexer);
         let res = parser.parse();
         println!("{:?}, result", res);
@@ -239,23 +275,9 @@ mod tests {
         assert_eq!(prog.statements.len(), 1);
 
         // Statement must be an expression statement.
-        assert_eq!(prog.statements[0],
-                   ast::Statement::ExpressionStatement(
-                       Box::new(ast::Expression::Identifier(
-                           String::from("foobar")))));
+        assert_eq!(
+            prog.statements[0],
+            ast::Statement::ExpressionStatement(Box::new(ast::Expression::IntegerLiteral(5)))
+        );
     }
-
-    // fn test_integer_literal_expression() {
-    //     let lexer = Lexer::new("foobar;");
-    //     let mut parser = Parser::new(lexer);
-    //     let res = parser.parse();
-    //     println!("{:?}, result", res);
-    //     let prog = parser.parse().unwrap();
-
-    //     assert_eq!(prog.statements.len(), 1);
-
-    //     // Statement must be an expression statement.
-    //     assert_eq!(prog.statements[0],
-    //                Statement::ExpressionStatement(Box::new(Expression::IntegerLiteral(Box::new(Token::INT(5))))));
-    // }
 }
