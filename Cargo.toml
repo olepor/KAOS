@@ -5,3 +5,5 @@ authors = ["Ole Petter <olepor@matnat.uio.no>"]
 
 [dependencies]
 lazy_static = "1.2.0"
+log = "0.4"
+simple_logger = "1.3.0"

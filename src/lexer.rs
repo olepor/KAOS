@@ -2,6 +2,7 @@ use std::str::Chars;
 use std::collections::HashMap;
 use std;
 use token::Token;
+use log::*;
 
 lazy_static! {
     static ref HASHMAP: HashMap<&'static str, Token> = {
@@ -34,7 +35,9 @@ impl <'a> Lexer <'a> {
     pub fn next(& mut self) -> Token {
         let r_tok = self.peek_token.clone();
         self.cur_token = self.peek_token.clone();
+        debug!("[lexer::next] cur_tok: {:?}", self.cur_token);
         self.peek_token = self.get_next_token();
+        debug!("[lexer::next] peek_tok: {:?}", self.peek_token);
         return r_tok;
     }
 
@@ -206,6 +209,11 @@ mod tests {
 
         let mut lexer = Lexer::new("return 5;");
         assert_eq!(lexer.next(), Token::RETURN);
+        assert_eq!(lexer.next(), Token::INT(5));
+        assert_eq!(lexer.next(), Token::SEMICOLON);
+        assert_eq!(lexer.next(), Token::EOF);
+
+        let mut lexer = Lexer::new("5;");
         assert_eq!(lexer.next(), Token::INT(5));
         assert_eq!(lexer.next(), Token::SEMICOLON);
         assert_eq!(lexer.next(), Token::EOF);

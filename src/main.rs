@@ -1,4 +1,7 @@
-#[macro_use] extern crate lazy_static;
+#[macro_use]
+extern crate lazy_static;
+extern crate log;
+extern crate simple_logger;
 
 mod lexer;
 mod token;
