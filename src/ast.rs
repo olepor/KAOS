@@ -5,7 +5,6 @@ pub struct Node {
     pub children: Vec<Node>,
 }
 
-
 #[derive(Debug)]
 pub enum NodeType {
     Program(Box<Program>),
@@ -30,7 +29,7 @@ impl fmt::Display for Program {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone, Hash, Eq)]
 pub enum Statement {
     Let(Box<Expression>),
     Return(Box<Expression>),
@@ -54,8 +53,8 @@ use token::Token;
 pub enum Expression {
     Identifier(String),
     IntegerLiteral(i32),
+    Prefix(Token, Box<Statement>),
     EMPTY,
-    // Prefix(Box<PrefixExpression>),
     // Infix(Box<InfixExpression>),
     // Boolean(bool),
     // String(String),
@@ -68,6 +67,7 @@ impl fmt::Display for Expression {
         match self {
             Expression::Identifier(s) => write!(f, "{}", s),
             Expression::IntegerLiteral(i) => write!(f, "{}", i),
+            Expression::Prefix(i, j) => write!(f, "{}:{}", i, j),
             Expression::EMPTY => write!(f, "Empty expression"),
             // Expression::Prefix(pref) => pref.to_string(),
             // Expression::Infix(infix) => infix.to_string(),

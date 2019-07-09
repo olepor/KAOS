@@ -1,13 +1,13 @@
 use ast;
 use lexer::Lexer;
+use log::*;
 use std::error::Error;
 use std::fmt;
 use std::result::Result;
 use token::Token;
-use log::*;
 // Current progress: Pratt-parsing of identifiers.
 // Not done: Parsing of expressions for return statements.
-// Next topic: Integer literals.
+// Next topic: Prefix-Expressions
 
 pub enum Precedence {
     LOWEST,
@@ -104,6 +104,11 @@ impl<'a> Parser<'a> {
         match token {
             Token::IDENT(i) => Ok(ast::Expression::Identifier(i)),
             Token::INT(i) => Ok(ast::Expression::IntegerLiteral(i)),
+            Token::MINUS => {
+                // parse the following expression
+                let expr = self.parse_expression(Precedence::LOWEST)?;
+                Ok(ast::Expression::Prefix(Token::MINUS, Box::new(expr)))
+            }
             _ => Err(ParseError::UnImplemented),
         }
     }
@@ -222,10 +227,7 @@ mod tests {
         // Verify the AST structure
         assert_eq!(
             ast.statements[0],
-            ast::Statement::Let(
-                Box::new(
-                    ast::Expression::Identifier(
-                        String::from("a"))))
+            ast::Statement::Let(Box::new(ast::Expression::Identifier(String::from("a"))))
         );
 
         // let lexer = Lexer::new("let a=b; let a = b");
@@ -279,9 +281,28 @@ mod tests {
         // Statement must be an expression statement.
         assert_eq!(
             prog.statements[0],
-            ast::Statement::ExpressionStatement(
-                Box::new(
-                    ast::Expression::IntegerLiteral(5)))
+            ast::Statement::ExpressionStatement(Box::new(ast::Expression::IntegerLiteral(5)))
+        );
+    }
+
+    #[test]
+    fn test_parse_prefix_expression() {
+        let _ = simple_logger::init();
+        let lexer = Lexer::new("-5;");
+        let mut parser = Parser::new(lexer);
+        let res = parser.parse();
+        println!("{:?}, result", res);
+        let prog = res.unwrap();
+
+        assert_eq!(prog.statements.len(), 1);
+
+        // Statement must be an expression statement.
+        assert_eq!(
+            prog.statements[0],
+            ast::Statement::ExpressionStatement(Box::new(ast::Expression::Prefix(
+                Token::MINUS,
+                Box::new(ast::Statement::ExpressionStatement(Box::new(ast::Expression::IntegerLiteral(5))))
+            )))
         );
     }
 }
