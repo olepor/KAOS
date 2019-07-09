@@ -10,8 +10,3 @@ enum Precedence {
         PREFIX, // -X or !X
         CALL, // myFunction(X)
     }
-
-pub trait PrattParser {
-    fn prefixParsefn(& mut self) ast::Expression
-    fn postfixParsefn(& mut self, expr: ast::Expression) ast::Expression
-}
