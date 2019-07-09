@@ -10,6 +10,7 @@ use token::Token;
 // Not done: Parsing of expressions for return statements.
 // Next topic: Prefix-Expressions
 
+#[derive(Clone)]
 enum Precedence {
     LOWEST,
     EQUALS,      // == LESSGREATER // > or <
@@ -228,6 +229,25 @@ impl<'a> Parser<'a> {
 
     fn peek_token(&self) -> Token {
         return self.lexer.peek();
+    }
+
+
+    // cur_precedence returns the precedence of the current token
+    fn cur_precedence(&self) -> Precedence {
+        let prec = PRECEDENCEMAP.get(&self.cur_token());
+        match prec {
+            Some(p) => (*p).clone(),
+            None => Precedence::LOWEST,
+        }
+    }
+
+    // peek_precedence returns the precedence of the peek token
+    fn peek_precedence(&self) -> Precedence {
+        let prec = PRECEDENCEMAP.get(&self.peek_token());
+        match prec {
+            Some(p) => (*p).clone(),
+            None => Precedence::LOWEST,
+        }
     }
 }
 
