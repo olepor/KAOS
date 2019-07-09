@@ -265,19 +265,23 @@ mod tests {
         );
     }
 
+    #[test]
     fn test_integer_literal_expression() {
+        let _ = simple_logger::init();
         let lexer = Lexer::new("5;");
         let mut parser = Parser::new(lexer);
         let res = parser.parse();
         println!("{:?}, result", res);
-        let prog = parser.parse().unwrap();
+        let prog = res.unwrap();
 
         assert_eq!(prog.statements.len(), 1);
 
         // Statement must be an expression statement.
         assert_eq!(
             prog.statements[0],
-            ast::Statement::ExpressionStatement(Box::new(ast::Expression::IntegerLiteral(5)))
+            ast::Statement::ExpressionStatement(
+                Box::new(
+                    ast::Expression::IntegerLiteral(5)))
         );
     }
 }
