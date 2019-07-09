@@ -104,9 +104,14 @@ impl<'a> Parser<'a> {
         match token {
             Token::IDENT(i) => Ok(ast::Expression::Identifier(i)),
             Token::INT(i) => Ok(ast::Expression::IntegerLiteral(i)),
+            Token::BANG => {
+                // Parse the following expression
+                let expr = self.parse_expression(Precedence::PREFIX)?;
+                Ok(ast::Expression::Prefix(Token::BANG, Box::new(expr)))
+            }
             Token::MINUS => {
-                // parse the following expression
-                let expr = self.parse_expression(Precedence::LOWEST)?;
+                // Parse the following expression
+                let expr = self.parse_expression(Precedence::PREFIX)?;
                 Ok(ast::Expression::Prefix(Token::MINUS, Box::new(expr)))
             }
             _ => Err(ParseError::UnImplemented),
