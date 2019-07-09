@@ -1,4 +1,5 @@
 use ast;
+use std::collections::HashMap;
 use lexer::Lexer;
 use log::*;
 use std::error::Error;
@@ -9,13 +10,31 @@ use token::Token;
 // Not done: Parsing of expressions for return statements.
 // Next topic: Prefix-Expressions
 
-pub enum Precedence {
+enum Precedence {
     LOWEST,
-    EQUALS,  // == LESSGREATER // > or <
-    SUM,     // +
-    PRODUCT, // *
-    PREFIX,  // -X or !X
-    CALL,    // myFunction(X)
+    EQUALS,      // == LESSGREATER // > or <
+    LESSGREATER, // < or > TODO - is the above wrong?
+    SUM,         // +
+    PRODUCT,     // *
+    PREFIX,      // -X or !X
+    CALL,        // myFunction(X)
+}
+
+// PrecedenceMap table relates tokens to their precedence
+// through a hashmap (lazily initialized)
+lazy_static! {
+    static ref PRECEDENCEMAP: HashMap<Token, Precedence> = {
+        let mut m: HashMap<Token, Precedence> = HashMap::new();
+        m.insert(Token::EQ, Precedence::EQUALS);
+        m.insert(Token::NOTEQ, Precedence::EQUALS);
+        m.insert(Token::LT, Precedence::LESSGREATER);
+        m.insert(Token::GT, Precedence::LESSGREATER);
+        m.insert(Token::PLUS, Precedence::SUM);
+        m.insert(Token::MINUS, Precedence::SUM);
+        m.insert(Token::SLASH, Precedence::PRODUCT);
+        m.insert(Token::ASTERISK, Precedence::PRODUCT);
+        m
+    };
 }
 
 #[derive(Debug)]
