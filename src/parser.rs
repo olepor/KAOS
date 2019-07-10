@@ -1,7 +1,7 @@
 use ast;
-use std::collections::HashMap;
 use lexer::Lexer;
 use log::*;
+use std::collections::HashMap;
 use std::error::Error;
 use std::fmt;
 use std::result::Result;
@@ -10,7 +10,7 @@ use token::Token;
 // Not done: Parsing of expressions for return statements.
 // Next topic: Prefix-Expressions
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq, PartialOrd, Debug)]
 enum Precedence {
     LOWEST,
     EQUALS,      // == LESSGREATER // > or <
@@ -90,6 +90,7 @@ impl<'a> Parser<'a> {
         let mut prog = ast::Program {
             statements: Vec::new(),
         };
+        self.next_token(); // Otherwise the first token is uninitialized
         loop {
             debug!("[parser::parse_program] *Nom, nom, nom* Parsing the next statement...");
             let statement = self.parse_statement()?;
@@ -101,7 +102,11 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_statement(&mut self) -> Result<ast::Statement, ParseError> {
-        match self.peek_token() {
+        debug!(
+            "[parser::parse_statement] current token: {:?}",
+            self.cur_token()
+        );
+        match self.cur_token() {
             Token::LET => {
                 self.next_token(); // Consume Let
                 self.parse_let_statement()
@@ -126,25 +131,59 @@ impl<'a> Parser<'a> {
             Token::INT(i) => Ok(ast::Expression::IntegerLiteral(i)),
             Token::BANG => {
                 // Parse the following expression
-                let expr = self.parse_expression(Precedence::PREFIX)?;
-                Ok(ast::Expression::Prefix(Token::BANG, Box::new(expr)))
+                self.next_token();
+                let right = self.parse_expression(Precedence::PREFIX)?;
+                Ok(ast::Expression::Prefix(Token::BANG, Box::new(right)))
             }
             Token::MINUS => {
                 // Parse the following expression
-                let expr = self.parse_expression(Precedence::PREFIX)?;
-                Ok(ast::Expression::Prefix(Token::MINUS, Box::new(expr)))
+                self.next_token();
+                let right = self.parse_expression(Precedence::PREFIX)?;
+                Ok(ast::Expression::Prefix(Token::MINUS, Box::new(right)))
             }
             _ => Err(ParseError::UnImplemented),
         }
     }
 
-    fn parse_expression(&mut self, precedence: Precedence) -> Result<ast::Statement, ParseError> {
-        debug!("[parser::parse_expression]");
-        let cur_tok = self.next_token();
-        debug!("[parser::parse_expression] current_token: {:?}", cur_tok);
-        let prefix = self.parse_prefix(cur_tok)?;
+    fn parse_infix(&mut self, left: ast::Expression) -> Result<ast::Expression, ParseError> {
+        debug!("[parser:parse_infix] left: {:?}", left);
+        let operator = self.cur_token();
+        let precedence = self.cur_precedence();
+        self.next_token();
+        let right = self.parse_expression(precedence)?;
+        Ok(ast::Expression::Infix(
+            Box::new(left),
+            operator,
+            Box::new(right),
+        ))
+    }
 
-        return Ok(ast::Statement::ExpressionStatement(Box::new(prefix)));
+    fn parse_expression(&mut self, precedence: Precedence) -> Result<ast::Expression, ParseError> {
+        debug!("[parser::parse_expression] precedence: {:?}", precedence);
+        let cur_tok = self.cur_token();
+        debug!("[parser::parse_expression] current_token: {:?}", cur_tok);
+        let left = self.parse_prefix(cur_tok)?;
+        // loop {
+        //     let peek_token = self.peek_token();
+        //     if peek_token != Token::SEMICOLON && precedence < self.peek_precedence() {
+        //         let infix = self.parse_infix(left.clone());
+        //         match infix {
+        //             Err(_) => {
+        //                 // Failed, return infix
+        //                 debug!("[parser::parse_expression] infix parse failed: {:?}", infix);
+        //                 return Ok(left);
+        //             }
+        //             _ => {} // Identity Op
+        //         }
+        //         self.next_token(); // Consume
+        //         left = self.parse_infix(left)?; // Recurse
+        //         debug!("[parser::parse_expression] left - parse_infix: {:?}", left);
+        //     } else {
+        //         debug!("[parser::parse_expression] breaking out of parsing loop");
+        //         break;
+        //     }
+        // }
+        return Ok(left);
     }
 
     fn parse_expression_statement(&mut self) -> Result<ast::Statement, ParseError> {
@@ -155,7 +194,7 @@ impl<'a> Parser<'a> {
             self.next_token(); // Consume
         }
 
-        return Ok(expr);
+        return Ok(ast::Statement::ExpressionStatement(Box::new(expr)));
     }
 
     // fn parse_integer_literal(&mut self) -> Result<Statement, ParseError> {
@@ -169,8 +208,9 @@ impl<'a> Parser<'a> {
     // }
 
     fn parse_let_statement(&mut self) -> Result<ast::Statement, ParseError> {
+        debug!("[parser::parse_let_statement]");
         // For a let statement the next token must be an identifier!
-        let ident = self.next_token();
+        let ident = self.cur_token();
         let ident_ast_node = match ident {
             // Maybe this can be made into a partial eq test, or a macro ?
             Token::IDENT(i) => {
@@ -231,10 +271,14 @@ impl<'a> Parser<'a> {
         return self.lexer.peek();
     }
 
-
     // cur_precedence returns the precedence of the current token
     fn cur_precedence(&self) -> Precedence {
         let prec = PRECEDENCEMAP.get(&self.cur_token());
+        debug!(
+            "[parser::cur_precedence] Token: {:?} - Precedence {:?}",
+            self.cur_token(),
+            prec
+        );
         match prec {
             Some(p) => (*p).clone(),
             None => Precedence::LOWEST,
@@ -243,6 +287,7 @@ impl<'a> Parser<'a> {
 
     // peek_precedence returns the precedence of the peek token
     fn peek_precedence(&self) -> Precedence {
+        debug!("[parser::peek_precedence]");
         let prec = PRECEDENCEMAP.get(&self.peek_token());
         match prec {
             Some(p) => (*p).clone(),
@@ -345,8 +390,31 @@ mod tests {
             prog.statements[0],
             ast::Statement::ExpressionStatement(Box::new(ast::Expression::Prefix(
                 Token::MINUS,
-                Box::new(ast::Statement::ExpressionStatement(Box::new(ast::Expression::IntegerLiteral(5))))
+                Box::new(ast::Expression::IntegerLiteral(5))
             )))
         );
     }
+
+    //     #[test]
+    //     fn test_parse_infix_expressions() {
+    //         let _ = simple_logger::init();
+    //         let lexer = Lexer::new("5 + 5;");
+    //         let mut parser = Parser::new(lexer);
+    //         let res = parser.parse();
+    //         println!("{:?}, result", res);
+    //         let prog = res.unwrap();
+
+    //         assert_eq!(prog.statements.len(), 1);
+
+    //         // Statement must be an expression statement.
+    //         assert_eq!(
+    //             prog.statements[0],
+    //             ast::Statement::ExpressionStatement(Box::new(ast::Expression::Infix(
+    //                 Box::new(ast::Expression::IntegerLiteral(5)),
+    //                 Token::MINUS,
+    //                 Box::new(ast::Expression::IntegerLiteral(5)
+    // )
+    //             )))
+    //         );
+    //     }
 }

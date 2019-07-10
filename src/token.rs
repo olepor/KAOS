@@ -1,4 +1,3 @@
-use std::mem::Discriminant;
 
 #[derive(Debug, PartialEq, Clone, Hash, Eq)]
 pub enum Token{
@@ -48,9 +47,6 @@ pub enum Token{
 
 }
 
-use parser::ParseError;
-use std::mem;
-
 use std::fmt;
 
 impl std::fmt::Display for Token {
@@ -61,12 +57,11 @@ impl std::fmt::Display for Token {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
 
     #[test]
     fn test_expect_token() {
-        let tokA = Token::INT(4);
-        let tokB = Token::INT(5);
+        // let tokA = Token::INT(4);
+        // let tokB = Token::INT(5);
         // tokA.expect_token_type(Discriminant(tokB));
     }
 }

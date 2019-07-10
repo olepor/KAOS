@@ -53,7 +53,10 @@ use token::Token;
 pub enum Expression {
     Identifier(String),
     IntegerLiteral(i32),
-    Prefix(Token, Box<Statement>),
+    // Operator - Right ExpressionStatement
+    Prefix(Token, Box<Expression>),
+    // Left ExpressionStatement - Operator - Right ExpressionStatement
+    Infix(Box<Expression>, Token, Box<Expression>),
     EMPTY,
     // Infix(Box<InfixExpression>),
     // Boolean(bool),
@@ -68,6 +71,7 @@ impl fmt::Display for Expression {
             Expression::Identifier(s) => write!(f, "{}", s),
             Expression::IntegerLiteral(i) => write!(f, "{}", i),
             Expression::Prefix(i, j) => write!(f, "{}:{}", i, j),
+            Expression::Infix(i, j, k) => write!(f, "{}:{}:{}", i, j, k),
             Expression::EMPTY => write!(f, "Empty expression"),
             // Expression::Prefix(pref) => pref.to_string(),
             // Expression::Infix(infix) => infix.to_string(),
