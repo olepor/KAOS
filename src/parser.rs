@@ -189,28 +189,32 @@ impl<'a> Parser<'a> {
         debug!("[parser::parse_expression] precedence: {:?}", precedence);
         let cur_tok = self.cur_token();
         debug!("[parser::parse_expression] current_token: {:?}", cur_tok);
-        let mut left = self.parse_prefix(cur_tok.clone())?;
+        let mut left_exp = self.parse_prefix(cur_tok.clone())?;
         loop {
             let peek_token = self.peek_token();
             if peek_token != Token::SEMICOLON && precedence < self.peek_precedence() {
-                let infix = self.parse_infix(left.clone(), cur_tok.clone());
-                match infix {
+                let peek_tok = self.peek_token();
+                self.next_token(); // Consume
+                let left = self.parse_infix(left_exp.clone(), peek_tok);
+                match left {
                     Err(_) => {
                         // Failed, return infix
-                        debug!("[parser::parse_expression] infix parse failed: {:?}", infix);
-                        return Ok(left);
+                        debug!("[parser::parse_expression] infix parse failed: {:?}", left);
+                        // left_exp = left;
+                        return Ok(left_exp);
                     }
-                    _ => {} // Identity Op
+                    Ok(l) => {
+                        debug!("[parser::parse_expression] left - parse_infix: {:?}", l);
+                        left_exp = l;
+                    }
                 }
-                self.next_token(); // Consume
-                left = self.parse_infix(left, cur_tok.clone())?; // Recurse
-                debug!("[parser::parse_expression] left - parse_infix: {:?}", left);
+                // left = self.parse_infix(left, cur_tok.clone())?; // Recurse
             } else {
                 debug!("[parser::parse_expression] breaking out of parsing loop");
                 break;
             }
         }
-        return Ok(left);
+        return Ok(left_exp);
     }
 
     fn parse_expression_statement(&mut self) -> Result<ast::Statement, ParseError> {
@@ -438,7 +442,7 @@ mod tests {
             prog.statements[0],
             ast::Statement::ExpressionStatement(Box::new(ast::Expression::Infix(
                 Box::new(ast::Expression::IntegerLiteral(5)),
-                Token::MINUS,
+                Token::PLUS,
                 Box::new(ast::Expression::IntegerLiteral(5))
             )))
         );
