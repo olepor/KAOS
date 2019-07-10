@@ -141,48 +141,75 @@ impl<'a> Parser<'a> {
                 let right = self.parse_expression(Precedence::PREFIX)?;
                 Ok(ast::Expression::Prefix(Token::MINUS, Box::new(right)))
             }
-            _ => Err(ParseError::UnImplemented),
+            _ => {
+                debug!("[parser::parse_prefix] Unknown prefix: {:?}", token);
+                Err(ParseError::UnImplemented)
+            }
         }
     }
 
-    fn parse_infix(&mut self, left: ast::Expression) -> Result<ast::Expression, ParseError> {
-        debug!("[parser:parse_infix] left: {:?}", left);
-        let operator = self.cur_token();
-        let precedence = self.cur_precedence();
-        self.next_token();
-        let right = self.parse_expression(precedence)?;
-        Ok(ast::Expression::Infix(
-            Box::new(left),
-            operator,
-            Box::new(right),
-        ))
+    fn parse_infix(
+        &mut self,
+        left: ast::Expression,
+        token: Token,
+    ) -> Result<ast::Expression, ParseError> {
+        debug!("[parser:parse_infix] left: {:?}, token: {:?}", left, token);
+        // Register for which tokens the parse_infix should be ran
+        match token {
+            Token::PLUS
+            | Token::MINUS
+            | Token::SLASH
+            | Token::ASTERISK
+            | Token::EQ
+            | Token::NOTEQ
+            | Token::LT
+            | Token::GT => {
+                let operator = self.cur_token();
+                let precedence = self.cur_precedence();
+                self.next_token();
+                let right = self.parse_expression(precedence)?;
+                debug!(
+                    "[parser::parse_infix] returning: left: {:?}, right: {:?}",
+                    left, right
+                );
+                Ok(ast::Expression::Infix(
+                    Box::new(left),
+                    operator,
+                    Box::new(right),
+                ))
+            }
+            _ => {
+                debug!("[parser::parse_infix] unrecognized token: {:?}", token);
+                Err(ParseError::UnImplemented)
+            }
+        }
     }
 
     fn parse_expression(&mut self, precedence: Precedence) -> Result<ast::Expression, ParseError> {
         debug!("[parser::parse_expression] precedence: {:?}", precedence);
         let cur_tok = self.cur_token();
         debug!("[parser::parse_expression] current_token: {:?}", cur_tok);
-        let left = self.parse_prefix(cur_tok)?;
-        // loop {
-        //     let peek_token = self.peek_token();
-        //     if peek_token != Token::SEMICOLON && precedence < self.peek_precedence() {
-        //         let infix = self.parse_infix(left.clone());
-        //         match infix {
-        //             Err(_) => {
-        //                 // Failed, return infix
-        //                 debug!("[parser::parse_expression] infix parse failed: {:?}", infix);
-        //                 return Ok(left);
-        //             }
-        //             _ => {} // Identity Op
-        //         }
-        //         self.next_token(); // Consume
-        //         left = self.parse_infix(left)?; // Recurse
-        //         debug!("[parser::parse_expression] left - parse_infix: {:?}", left);
-        //     } else {
-        //         debug!("[parser::parse_expression] breaking out of parsing loop");
-        //         break;
-        //     }
-        // }
+        let mut left = self.parse_prefix(cur_tok.clone())?;
+        loop {
+            let peek_token = self.peek_token();
+            if peek_token != Token::SEMICOLON && precedence < self.peek_precedence() {
+                let infix = self.parse_infix(left.clone(), cur_tok.clone());
+                match infix {
+                    Err(_) => {
+                        // Failed, return infix
+                        debug!("[parser::parse_expression] infix parse failed: {:?}", infix);
+                        return Ok(left);
+                    }
+                    _ => {} // Identity Op
+                }
+                self.next_token(); // Consume
+                left = self.parse_infix(left, cur_tok.clone())?; // Recurse
+                debug!("[parser::parse_expression] left - parse_infix: {:?}", left);
+            } else {
+                debug!("[parser::parse_expression] breaking out of parsing loop");
+                break;
+            }
+        }
         return Ok(left);
     }
 
@@ -395,26 +422,25 @@ mod tests {
         );
     }
 
-    //     #[test]
-    //     fn test_parse_infix_expressions() {
-    //         let _ = simple_logger::init();
-    //         let lexer = Lexer::new("5 + 5;");
-    //         let mut parser = Parser::new(lexer);
-    //         let res = parser.parse();
-    //         println!("{:?}, result", res);
-    //         let prog = res.unwrap();
+    #[test]
+    fn test_parse_infix_expressions() {
+        let _ = simple_logger::init();
+        let lexer = Lexer::new("5 + 5;");
+        let mut parser = Parser::new(lexer);
+        let res = parser.parse();
+        println!("{:?}, result", res);
+        let prog = res.unwrap();
 
-    //         assert_eq!(prog.statements.len(), 1);
+        assert_eq!(prog.statements.len(), 1);
 
-    //         // Statement must be an expression statement.
-    //         assert_eq!(
-    //             prog.statements[0],
-    //             ast::Statement::ExpressionStatement(Box::new(ast::Expression::Infix(
-    //                 Box::new(ast::Expression::IntegerLiteral(5)),
-    //                 Token::MINUS,
-    //                 Box::new(ast::Expression::IntegerLiteral(5)
-    // )
-    //             )))
-    //         );
-    //     }
+        // Statement must be an expression statement.
+        assert_eq!(
+            prog.statements[0],
+            ast::Statement::ExpressionStatement(Box::new(ast::Expression::Infix(
+                Box::new(ast::Expression::IntegerLiteral(5)),
+                Token::MINUS,
+                Box::new(ast::Expression::IntegerLiteral(5))
+            )))
+        );
+    }
 }
