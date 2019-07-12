@@ -129,6 +129,8 @@ impl<'a> Parser<'a> {
         match token {
             Token::IDENT(i) => Ok(ast::Expression::Identifier(i)),
             Token::INT(i) => Ok(ast::Expression::IntegerLiteral(i)),
+            Token::TRUE => Ok(ast::Expression::Boolean(true)),
+            Token::FALSE => Ok(ast::Expression::Boolean(false)),
             Token::BANG => {
                 // Parse the following expression
                 self.next_token();
@@ -208,7 +210,7 @@ impl<'a> Parser<'a> {
                         left_exp = l;
                     }
                 }
-                // left = self.parse_infix(left, cur_tok.clone())?; // Recurse
+            // left = self.parse_infix(left, cur_tok.clone())?; // Recurse
             } else {
                 debug!("[parser::parse_expression] breaking out of parsing loop");
                 break;
@@ -445,6 +447,24 @@ mod tests {
                 Token::PLUS,
                 Box::new(ast::Expression::IntegerLiteral(5))
             )))
+        );
+    }
+
+    #[test]
+    fn test_parse_boolean_expression() {
+        let _ = simple_logger::init();
+        let lexer = Lexer::new("true;");
+        let mut parser = Parser::new(lexer);
+        let res = parser.parse();
+        println!("{:?}, result", res);
+        let prog = res.unwrap();
+
+        assert_eq!(prog.statements.len(), 1);
+
+        // Statement must be an expression statement.
+        assert_eq!(
+            prog.statements[0],
+            ast::Statement::ExpressionStatement(Box::new(ast::Expression::Boolean(true)))
         );
     }
 }
