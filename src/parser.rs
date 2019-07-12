@@ -131,6 +131,7 @@ impl<'a> Parser<'a> {
             Token::INT(i) => Ok(ast::Expression::IntegerLiteral(i)),
             Token::TRUE => Ok(ast::Expression::Boolean(true)),
             Token::FALSE => Ok(ast::Expression::Boolean(false)),
+            Token::LPAREN => self.parse_grouped_expression(),
             Token::BANG => {
                 // Parse the following expression
                 self.next_token();
@@ -217,6 +218,16 @@ impl<'a> Parser<'a> {
             }
         }
         return Ok(left_exp);
+    }
+
+    fn parse_grouped_expression(&mut self) -> Result<ast::Expression, ParseError> {
+        self.next_token();
+        let exp = self.parse_expression(Precedence::LOWEST)?;
+        if self.peek_token() != Token::RPAREN {
+            // TODO - how to handle this case?
+            return Err(ParseError::UnImplemented);
+        }
+        Ok(exp)
     }
 
     fn parse_expression_statement(&mut self) -> Result<ast::Statement, ParseError> {
@@ -465,6 +476,32 @@ mod tests {
         assert_eq!(
             prog.statements[0],
             ast::Statement::ExpressionStatement(Box::new(ast::Expression::Boolean(true)))
+        );
+    }
+
+    #[test]
+    fn test_parse_grouped_expression() {
+        let _ = simple_logger::init();
+        let lexer = Lexer::new("(1+2)*3;");
+        let mut parser = Parser::new(lexer);
+        let res = parser.parse();
+        println!("{:?}, result", res);
+        let prog = res.unwrap();
+
+        assert_eq!(prog.statements.len(), 1);
+
+        // Statement must be an expression statement.
+        assert_eq!(
+            prog.statements[0],
+            ast::Statement::ExpressionStatement(Box::new(ast::Expression::Infix(
+                Box::new(ast::Expression::Infix(
+                    Box::new(ast::Expression::IntegerLiteral(1)),
+                    Token::PLUS,
+                    Box::new(ast::Expression::IntegerLiteral(2))
+                )),
+                Token::ASTERISK,
+                Box::new(ast::Expression::IntegerLiteral(3))
+            )))
         );
     }
 }
