@@ -195,6 +195,7 @@ impl<'a> Parser<'a> {
         let mut left_exp = self.parse_prefix(cur_tok.clone())?;
         loop {
             let peek_token = self.peek_token();
+            debug!("[parser::parse_expression] precence: {:?}, peek_token: {:?}, peek_precedence: {:?}", precedence, peek_token, self.peek_precedence());
             if peek_token != Token::SEMICOLON && precedence < self.peek_precedence() {
                 let peek_tok = self.peek_token();
                 self.next_token(); // Consume
@@ -221,12 +222,16 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_grouped_expression(&mut self) -> Result<ast::Expression, ParseError> {
+        debug!("[parser::parse_grouped_expression]");
         self.next_token();
         let exp = self.parse_expression(Precedence::LOWEST)?;
         if self.peek_token() != Token::RPAREN {
             // TODO - how to handle this case?
+            debug!("[parser::parse_grouped_expression]: peek token is not RPAREN. How to handle?");
             return Err(ParseError::UnImplemented);
         }
+        debug!("[parser::parse_grouped_expression] expression: {:?}", exp);
+        self.next_token(); // Consume RPAREN. Is this correct though?
         Ok(exp)
     }
 
@@ -434,6 +439,27 @@ mod tests {
             prog.statements[0],
             ast::Statement::ExpressionStatement(Box::new(ast::Expression::Prefix(
                 Token::MINUS,
+                Box::new(ast::Expression::IntegerLiteral(5))
+            )))
+        );
+        let lexer = Lexer::new("5 + 5 + 5;");
+        let mut parser = Parser::new(lexer);
+        let res = parser.parse();
+        println!("{:?}, result", res);
+        let prog = res.unwrap();
+
+        assert_eq!(prog.statements.len(), 1);
+
+        // Statement must be an expression statement.
+        assert_eq!(
+            prog.statements[0],
+            ast::Statement::ExpressionStatement(Box::new(ast::Expression::Infix(
+                Box::new(ast::Expression::Infix(
+                    Box::new(ast::Expression::IntegerLiteral(5)),
+                    Token::PLUS,
+                    Box::new(ast::Expression::IntegerLiteral(5))
+                )),
+                Token::PLUS,
                 Box::new(ast::Expression::IntegerLiteral(5))
             )))
         );
