@@ -133,6 +133,11 @@ impl<'a> Parser<'a> {
                 let right = self.parse_expression(Precedence::PREFIX)?;
                 Ok(ast::Expression::Prefix(Token::MINUS, Box::new(right)))
             }
+            Token::IF => {
+                self.next_token();
+                let if_exp = self.parse_if_statement()?;
+                Ok(if_exp)
+            }
             _ => {
                 debug!("[parser::parse_prefix] Unknown prefix: {:?}", token);
                 Err(ParseError::UnImplemented)
@@ -276,7 +281,7 @@ impl<'a> Parser<'a> {
         Ok(ast::Statement::Return(Box::new(ast::Expression::EMPTY)))
     }
 
-    fn parse_if_statement(&mut self) -> Result<ast::Statement, ParseError> {
+    fn parse_if_statement(&mut self) -> Result<ast::Expression, ParseError> {
         if self.peek_token() != Token::LPAREN {
             // TODO - how to handle this?
             Err(ParseError::UnexpectedToken(
@@ -300,7 +305,7 @@ impl<'a> Parser<'a> {
             ))?
         }
         let consequence = self.parse_block_statement()?;
-        let alternative: ast::Statement;
+        let mut alternative: Option<Box<ast::Statement>> = None;
         if self.peek_token() == Token::ELSE {
             self.next_token();
             if self.peek_token() != Token::LBRACE {
@@ -309,19 +314,14 @@ impl<'a> Parser<'a> {
                     String::from("Expected '('"),
                 ))?
             }
-            alternative = self.parse_block_statement()?;
+            let tmp = self.parse_block_statement()?;
+            alternative = Some(Box::new(tmp));
         }
-        Ok(ast::Statement::ExpressionStatement(Box::new(
-            ast::Expression::If(
-                Box::new(condition),
-                Box::new(consequence),
-                Box::new(alternative),
-            ),
-        )))
+        Ok(ast::Expression::If(Box::new(condition), Box::new(consequence), alternative))
     }
 
     fn parse_block_statement(&mut self) -> Result<ast::Statement, ParseError> {
-        let stmts: Vec<ast::Statement> = Vec::new();
+        let mut stmts: Vec<ast::Statement> = Vec::new();
         self.next_token();
         while self.cur_token() != Token::RBRACE && self.cur_token() != Token::EOF {
             let stmt = self.parse_statement()?;
@@ -571,16 +571,16 @@ mod tests {
             prog.statements[0],
             ast::Statement::ExpressionStatement(Box::new(ast::Expression::If(
                 Box::new(ast::Expression::Boolean(false)),
-                Box::new(ast::Statement::Block(Vec::new(
+                Box::new(ast::Statement::Block(vec!(
                     ast::Statement::ExpressionStatement(Box::new(ast::Expression::Identifier(
                         String::from("x")
                     )))
                 ))),
-                Box::new(ast::Statement::Block(Vec::new(
+                Some(Box::new(ast::Statement::Block(vec!(
                     ast::Statement::ExpressionStatement(Box::new(ast::Expression::Identifier(
                         String::from("y")
                     )))
-                )))
+                ))))
             )))
         );
     }

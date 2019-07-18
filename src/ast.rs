@@ -35,7 +35,6 @@ pub enum Statement {
     Return(Box<Expression>),
     ExpressionStatement(Box<Expression>),
     Block(Vec<Statement>),
-    EMPTY,
 }
 
 impl fmt::Display for Statement {
@@ -44,6 +43,7 @@ impl fmt::Display for Statement {
             Statement::Let(stmt) => format!("{}", stmt),
             Statement::Return(ret) => format!("{}", ret),
             Statement::ExpressionStatement(exp) => format!("{}", exp),
+            Statement::Block(stmts) => format!("{:?}", stmts),
         };
         write!(f, "{}", s)
     }
@@ -61,7 +61,7 @@ pub enum Expression {
     Infix(Box<Expression>, Token, Box<Expression>),
     Boolean(bool),
     // condition <Consequence> <Alternative> (Block statements)
-    If(Box<Expression>, Box<Statement>, Box<Statement>),
+    If(Box<Expression>, Box<Statement>, Option<Box<Statement>>),
     EMPTY,
     // Infix(Box<InfixExpression>),
     // String(String),
@@ -77,6 +77,7 @@ impl fmt::Display for Expression {
             Expression::Prefix(i, j) => write!(f, "{}:{}", i, j),
             Expression::Infix(i, j, k) => write!(f, "{}:{}:{}", i, j, k),
             Expression::Boolean(b) => write!(f, "{}", b),
+            Expression::If(cond, cons, alt) => write!(f, "{}:{}:{:?}", cond, cons, alt),
             Expression::EMPTY => write!(f, "Empty expression"),
             // Expression::Prefix(pref) => pref.to_string(),
             // Expression::Infix(infix) => infix.to_string(),
