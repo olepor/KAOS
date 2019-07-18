@@ -300,7 +300,14 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_block_statement(&mut self) -> Result<ast::Statement, ParseError> {
-        Err(ParseError::UnImplemented)
+        let stmts: Vec<ast::Statement> = Vec::new();
+        self.next_token();
+        while self.cur_token() != Token::RBRACE && self.cur_token() != Token::EOF {
+            let stmt = self.parse_statement()?;
+            stmts.push(stmt);
+            self.next_token();
+        }
+        Ok(ast::Statement::Block(stmts))
     }
 
     fn cur_token(&self) -> Token {
