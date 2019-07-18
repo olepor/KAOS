@@ -279,23 +279,33 @@ impl<'a> Parser<'a> {
     fn parse_if_statement(&mut self) -> Result<ast::Statement, ParseError> {
         if self.peek_token() != Token::LPAREN {
             // TODO - how to handle this?
-            Err(ParseError::UnexpectedToken(self.peek_token(),
-                                            String::from("Expected '('")))?
+            Err(ParseError::UnexpectedToken(
+                self.peek_token(),
+                String::from("Expected '('"),
+            ))?
         }
         self.next_token();
         let condition = self.parse_expression(Precedence::LOWEST)?;
         if self.peek_token() != Token::RPAREN {
-            Err(ParseError::UnexpectedToken(self.peek_token(),
-                                            String::from("Expected ')'")))?
+            Err(ParseError::UnexpectedToken(
+                self.peek_token(),
+                String::from("Expected ')'"),
+            ))?
         }
         self.next_token();
         if self.peek_token() != Token::LBRACE {
-            Err(ParseError::UnexpectedToken(self.peek_token(),
-                                            String::from("Expected '{'")))?
+            Err(ParseError::UnexpectedToken(
+                self.peek_token(),
+                String::from("Expected '{'"),
+            ))?
         }
         let consequence = self.parse_block_statement()?;
         Ok(ast::Statement::ExpressionStatement(Box::new(
-            ast::Expression::If(Box::new(condition), Box::new(consequence), Box::new(ast::Statement::EMPTY))
+            ast::Expression::If(
+                Box::new(condition),
+                Box::new(consequence),
+                Box::new(ast::Statement::EMPTY),
+            ),
         )))
     }
 
