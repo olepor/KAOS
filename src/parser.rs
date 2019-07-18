@@ -300,11 +300,22 @@ impl<'a> Parser<'a> {
             ))?
         }
         let consequence = self.parse_block_statement()?;
+        let alternative: ast::Statement;
+        if self.peek_token() == Token::ELSE {
+            self.next_token();
+            if self.peek_token() != Token::LBRACE {
+                Err(ParseError::UnexpectedToken(
+                    self.peek_token(),
+                    String::from("Expected '('"),
+                ))?
+            }
+            alternative = self.parse_block_statement()?;
+        }
         Ok(ast::Statement::ExpressionStatement(Box::new(
             ast::Expression::If(
                 Box::new(condition),
                 Box::new(consequence),
-                Box::new(ast::Statement::EMPTY),
+                Box::new(alternative),
             ),
         )))
     }
