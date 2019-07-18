@@ -70,17 +70,6 @@ impl<'a> Parser<'a> {
         Parser { lexer: lexer }
     }
 
-    // fn prefix_fn(&mut self) -> Option<PrefixParseFn> {
-    //     match self.next_token() {
-    //         Token::IDENT(_) => Some(Parser::parse_identifier),
-    //         _ => None,
-    //     }
-    // }
-
-    // fn infix_fn(&mut self) -> Option<InfixParseFn> {
-    //     None
-    // }
-
     pub fn parse(&mut self) -> Result<ast::Program, ParseError> {
         return self.parse_program();
     }
