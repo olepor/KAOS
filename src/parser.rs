@@ -134,7 +134,6 @@ impl<'a> Parser<'a> {
                 Ok(ast::Expression::Prefix(Token::MINUS, Box::new(right)))
             }
             Token::IF => {
-                self.next_token();
                 let if_exp = self.parse_if_statement()?;
                 Ok(if_exp)
             }
@@ -282,49 +281,72 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_if_statement(&mut self) -> Result<ast::Expression, ParseError> {
+        debug!("parser::parse_if_statement]");
         if self.peek_token() != Token::LPAREN {
-            // TODO - how to handle this?
+            debug!(
+                "[parser::parse_if_statement] peek token is not LPAREN: {}",
+                self.peek_token()
+            );
             Err(ParseError::UnexpectedToken(
                 self.peek_token(),
-                String::from("Expected '('"),
+                String::from("Expected 'LPAREN'"),
             ))?
         }
         self.next_token();
         let condition = self.parse_expression(Precedence::LOWEST)?;
-        if self.peek_token() != Token::RPAREN {
+        debug!("parser::parse_if_statement] condition: {}", condition);
+        if self.cur_token() != Token::RPAREN {
+            debug!(
+                "[parser::parse_if_statement] peek token is not RPAREN: {}",
+                self.peek_token()
+            );
             Err(ParseError::UnexpectedToken(
                 self.peek_token(),
-                String::from("Expected ')'"),
+                String::from("Expected 'RPAREN'"),
             ))?
         }
         self.next_token();
-        if self.peek_token() != Token::LBRACE {
+        if self.cur_token() != Token::LBRACE {
+            debug!(
+                "[parser::parse_if_statement] peek token is not LBRACE: {}",
+                self.peek_token()
+            );
             Err(ParseError::UnexpectedToken(
                 self.peek_token(),
-                String::from("Expected '{'"),
+                String::from("Expected 'LBRACE'"),
             ))?
         }
         let consequence = self.parse_block_statement()?;
+        debug!("[parser::parse_if_statement] consequence: {}", consequence);
         let mut alternative: Option<Box<ast::Statement>> = None;
-        if self.peek_token() == Token::ELSE {
+        self.next_token();
+        if self.cur_token() == Token::ELSE {
+            debug!("[parser::parse_if_statement] parsing alternative (else) statement");
             self.next_token();
-            if self.peek_token() != Token::LBRACE {
+            if self.cur_token() != Token::LBRACE {
                 Err(ParseError::UnexpectedToken(
                     self.peek_token(),
-                    String::from("Expected '('"),
+                    String::from("Expected 'LBRACE'"),
                 ))?
             }
             let tmp = self.parse_block_statement()?;
+            debug!("[parser::parse_if_statement] alternative: {}", tmp);
             alternative = Some(Box::new(tmp));
         }
-        Ok(ast::Expression::If(Box::new(condition), Box::new(consequence), alternative))
+        Ok(ast::Expression::If(
+            Box::new(condition),
+            Box::new(consequence),
+            alternative,
+        ))
     }
 
     fn parse_block_statement(&mut self) -> Result<ast::Statement, ParseError> {
+        debug!("parser::parse_block_statement]");
         let mut stmts: Vec<ast::Statement> = Vec::new();
         self.next_token();
         while self.cur_token() != Token::RBRACE && self.cur_token() != Token::EOF {
             let stmt = self.parse_statement()?;
+            debug!("[parser::parse_block_statement] parsed statement: {}", stmt);
             stmts.push(stmt);
             self.next_token();
         }
@@ -570,7 +592,11 @@ mod tests {
         assert_eq!(
             prog.statements[0],
             ast::Statement::ExpressionStatement(Box::new(ast::Expression::If(
-                Box::new(ast::Expression::Boolean(false)),
+                Box::new(ast::Expression::Infix(
+                    Box::new(ast::Expression::IntegerLiteral(2)),
+                    Token::GT,
+                    Box::new(ast::Expression::IntegerLiteral(3))
+                )),
                 Box::new(ast::Statement::Block(vec!(
                     ast::Statement::ExpressionStatement(Box::new(ast::Expression::Identifier(
                         String::from("x")
