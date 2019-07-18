@@ -6,9 +6,9 @@ use std::error::Error;
 use std::fmt;
 use std::result::Result;
 use token::Token;
-// Current progress: Pratt-parsing of identifiers.
+// Current progress: Pratt-parsing of if-statements.
 // Not done: Parsing of expressions for return statements.
-// Next topic: Prefix-Expressions
+// Next topic: if-statements
 
 #[derive(Clone, PartialEq, PartialOrd, Debug)]
 enum Precedence {
@@ -246,16 +246,6 @@ impl<'a> Parser<'a> {
         return Ok(ast::Statement::ExpressionStatement(Box::new(expr)));
     }
 
-    // fn parse_integer_literal(&mut self) -> Result<Statement, ParseError> {
-
-    //     let val = match self.cur_token() {
-    //         Token::INT(v) => v,
-    //         _ => Err(ParseError::UnexpectedToken(self.cur_token(), String::from("Nooo")))?,
-    //     };
-
-    //     Ok(Statement::ExpressionStatement(Box::new(Expression::IntegerLiteral(val))))
-    // }
-
     fn parse_let_statement(&mut self) -> Result<ast::Statement, ParseError> {
         debug!("[parser::parse_let_statement]");
         // For a let statement the next token must be an identifier!
@@ -297,15 +287,32 @@ impl<'a> Parser<'a> {
         Ok(ast::Statement::Return(Box::new(ast::Expression::EMPTY)))
     }
 
-    // fn parse_if_statement(& mut self) -> Result<Statement, ParseError> {
+    fn parse_if_statement(&mut self) -> Result<ast::Statement, ParseError> {
+        if self.peek_token() != Token::LPAREN {
+            // TODO - how to handle this?
+            Err(ParseError::UnexpectedToken(self.peek_token(),
+                                            String::from("Expected '('")))?
+        }
+        self.next_token();
+        let condition = self.parse_expression(Precedence::LOWEST)?;
+        if self.peek_token() != Token::RPAREN {
+            Err(ParseError::UnexpectedToken(self.peek_token(),
+                                            String::from("Expected ')'")))?
+        }
+        self.next_token();
+        if self.peek_token() != Token::LBRACE {
+            Err(ParseError::UnexpectedToken(self.peek_token(),
+                                            String::from("Expected '{'")))?
+        }
+        let consequence = self.parse_block_statement()?;
+        Ok(ast::Statement::ExpressionStatement(Box::new(
+            ast::Expression::If(Box::new(condition), Box::new(consequence), Box::new(ast::Statement::EMPTY))
+        )))
+    }
 
-    // }
-
-    // fn consume_if<T>(&mut self, T) -> Token
-
-    // fn parse_identifier(parser: &mut Parser) -> Result<Expression, ParseError> {
-    //     return Ok(Box::new(Expression::Identifier("a".to_string())));
-    // }
+    fn parse_block_statement(&mut self) -> Result<ast::Statement, ParseError> {
+        Err(ParseError::UnImplemented)
+    }
 
     fn cur_token(&self) -> Token {
         self.lexer.cur_token.clone()
@@ -527,6 +534,36 @@ mod tests {
                 )),
                 Token::ASTERISK,
                 Box::new(ast::Expression::IntegerLiteral(3))
+            )))
+        );
+    }
+
+    #[test]
+    fn test_parse_if_statements() {
+        let _ = simple_logger::init();
+        let lexer = Lexer::new("if (2 > 3) { x } else { y };");
+        let mut parser = Parser::new(lexer);
+        let res = parser.parse();
+        println!("{:?}, result", res);
+        let prog = res.unwrap();
+
+        assert_eq!(prog.statements.len(), 1);
+
+        // Statement must be an expression statement.
+        assert_eq!(
+            prog.statements[0],
+            ast::Statement::ExpressionStatement(Box::new(ast::Expression::If(
+                Box::new(ast::Expression::Boolean(false)),
+                Box::new(ast::Statement::Block(Vec::new(
+                    ast::Statement::ExpressionStatement(Box::new(ast::Expression::Identifier(
+                        String::from("x")
+                    )))
+                ))),
+                Box::new(ast::Statement::Block(Vec::new(
+                    ast::Statement::ExpressionStatement(Box::new(ast::Expression::Identifier(
+                        String::from("y")
+                    )))
+                )))
             )))
         );
     }

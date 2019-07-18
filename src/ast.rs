@@ -34,6 +34,8 @@ pub enum Statement {
     Let(Box<Expression>),
     Return(Box<Expression>),
     ExpressionStatement(Box<Expression>),
+    Block(Vec<Statement>),
+    EMPTY,
 }
 
 impl fmt::Display for Statement {
@@ -58,6 +60,8 @@ pub enum Expression {
     // Left ExpressionStatement - Operator - Right ExpressionStatement
     Infix(Box<Expression>, Token, Box<Expression>),
     Boolean(bool),
+    // condition <Consequence> <Alternative> (Block statements)
+    If(Box<Expression>, Box<Statement>, Box<Statement>),
     EMPTY,
     // Infix(Box<InfixExpression>),
     // String(String),
